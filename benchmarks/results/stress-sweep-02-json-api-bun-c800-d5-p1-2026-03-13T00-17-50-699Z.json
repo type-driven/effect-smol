@@ -1,0 +1,44 @@
+{
+  "scenario": "02-json-api",
+  "platform": "bun",
+  "suite": "stress-sweep",
+  "nodeVersion": "v22.22.0",
+  "bunVersion": "1.3.10",
+  "denoVersion": "2.6.9 (stable, release, aarch64-apple-darwin)",
+  "timestamp": "2026-03-13T00:17:50.699Z",
+  "config": {
+    "connections": 800,
+    "duration": 5,
+    "pipelining": 1
+  },
+  "results": {
+    "requests": {
+      "total": 151347,
+      "average": 30270.4,
+      "mean": 30270.4,
+      "stddev": 5442.88,
+      "min": 24595,
+      "max": 36957,
+      "p50": 28367,
+      "p99": 36959
+    },
+    "latency": {
+      "average": 25.87,
+      "mean": 25.87,
+      "stddev": 7.94,
+      "min": 1,
+      "max": 151,
+      "p50": 25,
+      "p99": 47
+    },
+    "throughput": {
+      "average": 5933056,
+      "mean": 5933056,
+      "stddev": 1067480.79,
+      "min": 4820620,
+      "max": 7243572
+    },
+    "errors": 0,
+    "timeouts": 0
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "scenario": "01-hello-world",
+  "platform": "node",
+  "suite": "stress-confirm",
+  "nodeVersion": "v22.22.0",
+  "bunVersion": "1.3.10",
+  "denoVersion": "2.6.9 (stable, release, aarch64-apple-darwin)",
+  "timestamp": "2026-03-13T01:05:15.396Z",
+  "config": {
+    "connections": 400,
+    "duration": 10,
+    "pipelining": 1
+  },
+  "results": {
+    "requests": {
+      "total": 307242,
+      "average": 34139.56,
+      "mean": 34139.56,
+      "stddev": 6039.88,
+      "min": 17719,
+      "max": 39131,
+      "p50": 35967,
+      "p99": 39135
+    },
+    "latency": {
+      "average": 13.36,
+      "mean": 13.36,
+      "stddev": 85,
+      "min": 1,
+      "max": 2193,
+      "p50": 10,
+      "p99": 17
+    },
+    "throughput": {
+      "average": 5530396.45,
+      "mean": 5530396.45,
+      "stddev": 978626.16,
+      "min": 2870478,
+      "max": 6339222
+    },
+    "errors": 0,
+    "timeouts": 0
+  }
+}

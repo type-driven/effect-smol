@@ -1,0 +1,44 @@
+{
+  "scenario": "04-schema-validation",
+  "platform": "deno",
+  "suite": "stress-sweep",
+  "nodeVersion": "v22.22.0",
+  "bunVersion": "1.3.10",
+  "denoVersion": "2.6.9 (stable, release, aarch64-apple-darwin)",
+  "timestamp": "2026-03-13T00:24:26.009Z",
+  "config": {
+    "connections": 2400,
+    "duration": 5,
+    "pipelining": 1
+  },
+  "results": {
+    "requests": {
+      "total": 89276,
+      "average": 17854.41,
+      "mean": 17854.41,
+      "stddev": 1110.25,
+      "min": 16413,
+      "max": 19129,
+      "p50": 17951,
+      "p99": 19135
+    },
+    "latency": {
+      "average": 132.95,
+      "mean": 132.95,
+      "stddev": 25.24,
+      "min": 29,
+      "max": 397,
+      "p50": 132,
+      "p99": 262
+    },
+    "throughput": {
+      "average": 4213964.8,
+      "mean": 4213964.8,
+      "stddev": 261597.36,
+      "min": 3873468,
+      "max": 4514444
+    },
+    "errors": 0,
+    "timeouts": 0
+  }
+}

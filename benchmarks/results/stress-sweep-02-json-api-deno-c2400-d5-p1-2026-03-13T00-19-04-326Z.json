@@ -1,0 +1,44 @@
+{
+  "scenario": "02-json-api",
+  "platform": "deno",
+  "suite": "stress-sweep",
+  "nodeVersion": "v22.22.0",
+  "bunVersion": "1.3.10",
+  "denoVersion": "2.6.9 (stable, release, aarch64-apple-darwin)",
+  "timestamp": "2026-03-13T00:19:04.326Z",
+  "config": {
+    "connections": 2400,
+    "duration": 5,
+    "pipelining": 1
+  },
+  "results": {
+    "requests": {
+      "total": 142484,
+      "average": 28497.6,
+      "mean": 28497.6,
+      "stddev": 2448.22,
+      "min": 23793,
+      "max": 30569,
+      "p50": 29055,
+      "p99": 30575
+    },
+    "latency": {
+      "average": 83.49,
+      "mean": 83.49,
+      "stddev": 21.65,
+      "min": 12,
+      "max": 349,
+      "p50": 79,
+      "p99": 144
+    },
+    "throughput": {
+      "average": 6241075.2,
+      "mean": 6241075.2,
+      "stddev": 536131.2,
+      "min": 5210667,
+      "max": 6694611
+    },
+    "errors": 0,
+    "timeouts": 0
+  }
+}

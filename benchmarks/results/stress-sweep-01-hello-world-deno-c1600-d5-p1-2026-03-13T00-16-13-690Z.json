@@ -1,0 +1,44 @@
+{
+  "scenario": "01-hello-world",
+  "platform": "deno",
+  "suite": "stress-sweep",
+  "nodeVersion": "v22.22.0",
+  "bunVersion": "1.3.10",
+  "denoVersion": "2.6.9 (stable, release, aarch64-apple-darwin)",
+  "timestamp": "2026-03-13T00:16:13.690Z",
+  "config": {
+    "connections": 1600,
+    "duration": 5,
+    "pipelining": 1
+  },
+  "results": {
+    "requests": {
+      "total": 161118,
+      "average": 32225.6,
+      "mean": 32225.6,
+      "stddev": 1778.05,
+      "min": 29557,
+      "max": 34422,
+      "p50": 32751,
+      "p99": 34431
+    },
+    "latency": {
+      "average": 49.05,
+      "mean": 49.05,
+      "stddev": 10.87,
+      "min": 7,
+      "max": 224,
+      "p50": 49,
+      "p99": 57
+    },
+    "throughput": {
+      "average": 4446412.8,
+      "mean": 4446412.8,
+      "stddev": 245493.96,
+      "min": 4078866,
+      "max": 4750236
+    },
+    "errors": 0,
+    "timeouts": 0
+  }
+}

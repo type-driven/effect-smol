@@ -1,0 +1,44 @@
+{
+  "scenario": "03-routing",
+  "platform": "deno",
+  "suite": "stress-confirm",
+  "nodeVersion": "v22.22.0",
+  "bunVersion": "1.3.10",
+  "denoVersion": "2.6.9 (stable, release, aarch64-apple-darwin)",
+  "timestamp": "2026-03-13T01:57:07.268Z",
+  "config": {
+    "connections": 200,
+    "duration": 10,
+    "pipelining": 1
+  },
+  "results": {
+    "requests": {
+      "total": 261750,
+      "average": 29083.78,
+      "mean": 29083.78,
+      "stddev": 7892.81,
+      "min": 7323,
+      "max": 33638,
+      "p50": 32335,
+      "p99": 33663
+    },
+    "latency": {
+      "average": 7.29,
+      "mean": 7.29,
+      "stddev": 55.12,
+      "min": 1,
+      "max": 2002,
+      "p50": 6,
+      "p99": 9
+    },
+    "throughput": {
+      "average": 5904554.67,
+      "mean": 5904554.67,
+      "stddev": 1602278.37,
+      "min": 1486569,
+      "max": 6828514
+    },
+    "errors": 0,
+    "timeouts": 0
+  }
+}

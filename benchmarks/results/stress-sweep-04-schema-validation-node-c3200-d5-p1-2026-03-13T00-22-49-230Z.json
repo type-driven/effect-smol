@@ -1,0 +1,44 @@
+{
+  "scenario": "04-schema-validation",
+  "platform": "node",
+  "suite": "stress-sweep",
+  "nodeVersion": "v22.22.0",
+  "bunVersion": "1.3.10",
+  "denoVersion": "2.6.9 (stable, release, aarch64-apple-darwin)",
+  "timestamp": "2026-03-13T00:22:49.230Z",
+  "config": {
+    "connections": 3200,
+    "duration": 5,
+    "pipelining": 1
+  },
+  "results": {
+    "requests": {
+      "total": 99474,
+      "average": 19896.8,
+      "mean": 19896.8,
+      "stddev": 3002.17,
+      "min": 14107,
+      "max": 22518,
+      "p50": 21279,
+      "p99": 22527
+    },
+    "latency": {
+      "average": 42.13,
+      "mean": 42.13,
+      "stddev": 106.11,
+      "min": 27,
+      "max": 5020,
+      "p50": 36,
+      "p99": 74
+    },
+    "throughput": {
+      "average": 5191884.8,
+      "mean": 5191884.8,
+      "stddev": 783417.27,
+      "min": 3681927,
+      "max": 5877198
+    },
+    "errors": 0,
+    "timeouts": 0
+  }
+}

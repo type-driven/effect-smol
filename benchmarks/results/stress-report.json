@@ -1,0 +1,1719 @@
+{
+  "generatedAt": "2026-03-13T01:15:35.410Z",
+  "nodeVersion": "v22.22.0",
+  "bunVersion": "1.3.10",
+  "denoVersion": "2.6.9 (stable, release, aarch64-apple-darwin)",
+  "levels": [
+    100,
+    200,
+    400,
+    800,
+    1200,
+    1600,
+    2000,
+    2400,
+    2800,
+    3200
+  ],
+  "duration": 5,
+  "confirmDuration": 10,
+  "pipelining": 1,
+  "warmupDuration": 2,
+  "confirmRuns": 3,
+  "scenarios": [
+    {
+      "scenario": "01-hello-world",
+      "lowestCommonDenominator": 3200,
+      "platforms": {
+        "node": {
+          "platform": "node",
+          "highestHealthyConnections": 3200,
+          "peakReqPerSec": 39395.2,
+          "peakReqPerSecConnections": 100,
+          "stages": [
+            {
+              "connections": 100,
+              "status": "healthy",
+              "reqPerSec": 39395.2,
+              "latencyAvgMs": 2.05,
+              "latencyP99Ms": 3,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-01-hello-world-node-c100-d5-p1-2026-03-13T00-14-01-679Z.json"
+            },
+            {
+              "connections": 200,
+              "status": "healthy",
+              "reqPerSec": 38211.2,
+              "latencyAvgMs": 4.77,
+              "latencyP99Ms": 7,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-01-hello-world-node-c200-d5-p1-2026-03-13T00-14-06-711Z.json"
+            },
+            {
+              "connections": 400,
+              "status": "healthy",
+              "reqPerSec": 36158.4,
+              "latencyAvgMs": 10.56,
+              "latencyP99Ms": 17,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-01-hello-world-node-c400-d5-p1-2026-03-13T00-14-11-749Z.json"
+            },
+            {
+              "connections": 800,
+              "status": "healthy",
+              "reqPerSec": 37449.6,
+              "latencyAvgMs": 16.45,
+              "latencyP99Ms": 21,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-01-hello-world-node-c800-d5-p1-2026-03-13T00-14-16-799Z.json"
+            },
+            {
+              "connections": 1200,
+              "status": "healthy",
+              "reqPerSec": 36304,
+              "latencyAvgMs": 17.11,
+              "latencyP99Ms": 20,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-01-hello-world-node-c1200-d5-p1-2026-03-13T00-14-21-861Z.json"
+            },
+            {
+              "connections": 1600,
+              "status": "healthy",
+              "reqPerSec": 33883.2,
+              "latencyAvgMs": 19.58,
+              "latencyP99Ms": 27,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-01-hello-world-node-c1600-d5-p1-2026-03-13T00-14-26-936Z.json"
+            },
+            {
+              "connections": 2000,
+              "status": "healthy",
+              "reqPerSec": 34427.2,
+              "latencyAvgMs": 19.63,
+              "latencyP99Ms": 24,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-01-hello-world-node-c2000-d5-p1-2026-03-13T00-14-32-017Z.json"
+            },
+            {
+              "connections": 2400,
+              "status": "healthy",
+              "reqPerSec": 35049.6,
+              "latencyAvgMs": 20.99,
+              "latencyP99Ms": 28,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-01-hello-world-node-c2400-d5-p1-2026-03-13T00-14-37-111Z.json"
+            },
+            {
+              "connections": 2800,
+              "status": "healthy",
+              "reqPerSec": 33480,
+              "latencyAvgMs": 23.13,
+              "latencyP99Ms": 34,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-01-hello-world-node-c2800-d5-p1-2026-03-13T00-14-42-216Z.json"
+            },
+            {
+              "connections": 3200,
+              "status": "healthy",
+              "reqPerSec": 29297.6,
+              "latencyAvgMs": 29.14,
+              "latencyP99Ms": 62,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-01-hello-world-node-c3200-d5-p1-2026-03-13T00-14-47-376Z.json"
+            }
+          ]
+        },
+        "bun": {
+          "platform": "bun",
+          "highestHealthyConnections": 3200,
+          "peakReqPerSec": 46787.2,
+          "peakReqPerSecConnections": 100,
+          "stages": [
+            {
+              "connections": 100,
+              "status": "healthy",
+              "reqPerSec": 46787.2,
+              "latencyAvgMs": 1.52,
+              "latencyP99Ms": 3,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-01-hello-world-bun-c100-d5-p1-2026-03-13T00-14-55-116Z.json"
+            },
+            {
+              "connections": 200,
+              "status": "healthy",
+              "reqPerSec": 45161.6,
+              "latencyAvgMs": 3.91,
+              "latencyP99Ms": 6,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-01-hello-world-bun-c200-d5-p1-2026-03-13T00-15-00-146Z.json"
+            },
+            {
+              "connections": 400,
+              "status": "healthy",
+              "reqPerSec": 40886.4,
+              "latencyAvgMs": 9.3,
+              "latencyP99Ms": 12,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-01-hello-world-bun-c400-d5-p1-2026-03-13T00-15-05-180Z.json"
+            },
+            {
+              "connections": 800,
+              "status": "healthy",
+              "reqPerSec": 43132.8,
+              "latencyAvgMs": 18.05,
+              "latencyP99Ms": 22,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-01-hello-world-bun-c800-d5-p1-2026-03-13T00-15-10-227Z.json"
+            },
+            {
+              "connections": 1200,
+              "status": "healthy",
+              "reqPerSec": 43926.4,
+              "latencyAvgMs": 26.82,
+              "latencyP99Ms": 32,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-01-hello-world-bun-c1200-d5-p1-2026-03-13T00-15-15-283Z.json"
+            },
+            {
+              "connections": 1600,
+              "status": "healthy",
+              "reqPerSec": 41936,
+              "latencyAvgMs": 37.64,
+              "latencyP99Ms": 52,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-01-hello-world-bun-c1600-d5-p1-2026-03-13T00-15-20-352Z.json"
+            },
+            {
+              "connections": 2000,
+              "status": "healthy",
+              "reqPerSec": 37790.4,
+              "latencyAvgMs": 52.43,
+              "latencyP99Ms": 138,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-01-hello-world-bun-c2000-d5-p1-2026-03-13T00-15-25-431Z.json"
+            },
+            {
+              "connections": 2400,
+              "status": "healthy",
+              "reqPerSec": 43459.2,
+              "latencyAvgMs": 54.64,
+              "latencyP99Ms": 98,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-01-hello-world-bun-c2400-d5-p1-2026-03-13T00-15-30-513Z.json"
+            },
+            {
+              "connections": 2800,
+              "status": "healthy",
+              "reqPerSec": 42652.8,
+              "latencyAvgMs": 65.06,
+              "latencyP99Ms": 166,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-01-hello-world-bun-c2800-d5-p1-2026-03-13T00-15-35-611Z.json"
+            },
+            {
+              "connections": 3200,
+              "status": "healthy",
+              "reqPerSec": 36024,
+              "latencyAvgMs": 88.27,
+              "latencyP99Ms": 352,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-01-hello-world-bun-c3200-d5-p1-2026-03-13T00-15-40-724Z.json"
+            }
+          ]
+        },
+        "deno": {
+          "platform": "deno",
+          "highestHealthyConnections": 3200,
+          "peakReqPerSec": 34838.4,
+          "peakReqPerSecConnections": 1200,
+          "stages": [
+            {
+              "connections": 100,
+              "status": "healthy",
+              "reqPerSec": 32518.4,
+              "latencyAvgMs": 2.5,
+              "latencyP99Ms": 5,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-01-hello-world-deno-c100-d5-p1-2026-03-13T00-15-48-464Z.json"
+            },
+            {
+              "connections": 200,
+              "status": "healthy",
+              "reqPerSec": 33435.2,
+              "latencyAvgMs": 5.48,
+              "latencyP99Ms": 9,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-01-hello-world-deno-c200-d5-p1-2026-03-13T00-15-53-491Z.json"
+            },
+            {
+              "connections": 400,
+              "status": "healthy",
+              "reqPerSec": 34179.2,
+              "latencyAvgMs": 11.2,
+              "latencyP99Ms": 16,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-01-hello-world-deno-c400-d5-p1-2026-03-13T00-15-58-530Z.json"
+            },
+            {
+              "connections": 800,
+              "status": "healthy",
+              "reqPerSec": 32339.2,
+              "latencyAvgMs": 24.24,
+              "latencyP99Ms": 33,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-01-hello-world-deno-c800-d5-p1-2026-03-13T00-16-03-578Z.json"
+            },
+            {
+              "connections": 1200,
+              "status": "healthy",
+              "reqPerSec": 34838.4,
+              "latencyAvgMs": 33.91,
+              "latencyP99Ms": 38,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-01-hello-world-deno-c1200-d5-p1-2026-03-13T00-16-08-628Z.json"
+            },
+            {
+              "connections": 1600,
+              "status": "healthy",
+              "reqPerSec": 32225.6,
+              "latencyAvgMs": 49.05,
+              "latencyP99Ms": 57,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-01-hello-world-deno-c1600-d5-p1-2026-03-13T00-16-13-690Z.json"
+            },
+            {
+              "connections": 2000,
+              "status": "healthy",
+              "reqPerSec": 32596.8,
+              "latencyAvgMs": 60.77,
+              "latencyP99Ms": 99,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-01-hello-world-deno-c2000-d5-p1-2026-03-13T00-16-18-766Z.json"
+            },
+            {
+              "connections": 2400,
+              "status": "healthy",
+              "reqPerSec": 33246.4,
+              "latencyAvgMs": 71.5,
+              "latencyP99Ms": 105,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-01-hello-world-deno-c2400-d5-p1-2026-03-13T00-16-23-853Z.json"
+            },
+            {
+              "connections": 2800,
+              "status": "healthy",
+              "reqPerSec": 31660.8,
+              "latencyAvgMs": 87.8,
+              "latencyP99Ms": 185,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-01-hello-world-deno-c2800-d5-p1-2026-03-13T00-16-28-951Z.json"
+            },
+            {
+              "connections": 3200,
+              "status": "healthy",
+              "reqPerSec": 33819.2,
+              "latencyAvgMs": 93.87,
+              "latencyP99Ms": 228,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-01-hello-world-deno-c3200-d5-p1-2026-03-13T00-16-34-054Z.json"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "scenario": "02-json-api",
+      "lowestCommonDenominator": 3200,
+      "platforms": {
+        "node": {
+          "platform": "node",
+          "highestHealthyConnections": 3200,
+          "peakReqPerSec": 32456,
+          "peakReqPerSecConnections": 200,
+          "stages": [
+            {
+              "connections": 100,
+              "status": "healthy",
+              "reqPerSec": 31515.2,
+              "latencyAvgMs": 2.62,
+              "latencyP99Ms": 5,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-02-json-api-node-c100-d5-p1-2026-03-13T00-16-42-202Z.json"
+            },
+            {
+              "connections": 200,
+              "status": "healthy",
+              "reqPerSec": 32456,
+              "latencyAvgMs": 5.67,
+              "latencyP99Ms": 7,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-02-json-api-node-c200-d5-p1-2026-03-13T00-16-47-234Z.json"
+            },
+            {
+              "connections": 400,
+              "status": "healthy",
+              "reqPerSec": 26504,
+              "latencyAvgMs": 14.57,
+              "latencyP99Ms": 18,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-02-json-api-node-c400-d5-p1-2026-03-13T00-16-52-273Z.json"
+            },
+            {
+              "connections": 800,
+              "status": "healthy",
+              "reqPerSec": 28977.6,
+              "latencyAvgMs": 19.81,
+              "latencyP99Ms": 23,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-02-json-api-node-c800-d5-p1-2026-03-13T00-16-57-316Z.json"
+            },
+            {
+              "connections": 1200,
+              "status": "healthy",
+              "reqPerSec": 30174.4,
+              "latencyAvgMs": 20.34,
+              "latencyP99Ms": 30,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-02-json-api-node-c1200-d5-p1-2026-03-13T00-17-02-369Z.json"
+            },
+            {
+              "connections": 1600,
+              "status": "healthy",
+              "reqPerSec": 28510.4,
+              "latencyAvgMs": 23.2,
+              "latencyP99Ms": 34,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-02-json-api-node-c1600-d5-p1-2026-03-13T00-17-07-435Z.json"
+            },
+            {
+              "connections": 2000,
+              "status": "healthy",
+              "reqPerSec": 30168,
+              "latencyAvgMs": 22.49,
+              "latencyP99Ms": 31,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-02-json-api-node-c2000-d5-p1-2026-03-13T00-17-12-513Z.json"
+            },
+            {
+              "connections": 2400,
+              "status": "healthy",
+              "reqPerSec": 27652.8,
+              "latencyAvgMs": 25.64,
+              "latencyP99Ms": 37,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-02-json-api-node-c2400-d5-p1-2026-03-13T00-17-17-609Z.json"
+            },
+            {
+              "connections": 2800,
+              "status": "healthy",
+              "reqPerSec": 27988.8,
+              "latencyAvgMs": 30.21,
+              "latencyP99Ms": 48,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-02-json-api-node-c2800-d5-p1-2026-03-13T00-17-22-713Z.json"
+            },
+            {
+              "connections": 3200,
+              "status": "healthy",
+              "reqPerSec": 25364.8,
+              "latencyAvgMs": 32.3,
+              "latencyP99Ms": 48,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-02-json-api-node-c3200-d5-p1-2026-03-13T00-17-27-850Z.json"
+            }
+          ]
+        },
+        "bun": {
+          "platform": "bun",
+          "highestHealthyConnections": 3200,
+          "peakReqPerSec": 39862.4,
+          "peakReqPerSecConnections": 200,
+          "stages": [
+            {
+              "connections": 100,
+              "status": "healthy",
+              "reqPerSec": 39734.4,
+              "latencyAvgMs": 2.17,
+              "latencyP99Ms": 4,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-02-json-api-bun-c100-d5-p1-2026-03-13T00-17-35-588Z.json"
+            },
+            {
+              "connections": 200,
+              "status": "healthy",
+              "reqPerSec": 39862.4,
+              "latencyAvgMs": 4.53,
+              "latencyP99Ms": 7,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-02-json-api-bun-c200-d5-p1-2026-03-13T00-17-40-618Z.json"
+            },
+            {
+              "connections": 400,
+              "status": "healthy",
+              "reqPerSec": 36888,
+              "latencyAvgMs": 10.33,
+              "latencyP99Ms": 21,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-02-json-api-bun-c400-d5-p1-2026-03-13T00-17-45-649Z.json"
+            },
+            {
+              "connections": 800,
+              "status": "healthy",
+              "reqPerSec": 30270.4,
+              "latencyAvgMs": 25.87,
+              "latencyP99Ms": 47,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-02-json-api-bun-c800-d5-p1-2026-03-13T00-17-50-699Z.json"
+            },
+            {
+              "connections": 1200,
+              "status": "healthy",
+              "reqPerSec": 36561.6,
+              "latencyAvgMs": 32.33,
+              "latencyP99Ms": 42,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-02-json-api-bun-c1200-d5-p1-2026-03-13T00-17-55-756Z.json"
+            },
+            {
+              "connections": 1600,
+              "status": "healthy",
+              "reqPerSec": 38422.4,
+              "latencyAvgMs": 41.1,
+              "latencyP99Ms": 55,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-02-json-api-bun-c1600-d5-p1-2026-03-13T00-18-00-815Z.json"
+            },
+            {
+              "connections": 2000,
+              "status": "healthy",
+              "reqPerSec": 34947.2,
+              "latencyAvgMs": 56.58,
+              "latencyP99Ms": 93,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-02-json-api-bun-c2000-d5-p1-2026-03-13T00-18-05-891Z.json"
+            },
+            {
+              "connections": 2400,
+              "status": "healthy",
+              "reqPerSec": 36379.2,
+              "latencyAvgMs": 65.44,
+              "latencyP99Ms": 169,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-02-json-api-bun-c2400-d5-p1-2026-03-13T00-18-10-986Z.json"
+            },
+            {
+              "connections": 2800,
+              "status": "healthy",
+              "reqPerSec": 38460.81,
+              "latencyAvgMs": 72.18,
+              "latencyP99Ms": 211,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-02-json-api-bun-c2800-d5-p1-2026-03-13T00-18-16-074Z.json"
+            },
+            {
+              "connections": 3200,
+              "status": "healthy",
+              "reqPerSec": 35892.81,
+              "latencyAvgMs": 88.45,
+              "latencyP99Ms": 356,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-02-json-api-bun-c3200-d5-p1-2026-03-13T00-18-21-178Z.json"
+            }
+          ]
+        },
+        "deno": {
+          "platform": "deno",
+          "highestHealthyConnections": 3200,
+          "peakReqPerSec": 32934.4,
+          "peakReqPerSecConnections": 200,
+          "stages": [
+            {
+              "connections": 100,
+              "status": "healthy",
+              "reqPerSec": 28940.8,
+              "latencyAvgMs": 2.91,
+              "latencyP99Ms": 5,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-02-json-api-deno-c100-d5-p1-2026-03-13T00-18-28-918Z.json"
+            },
+            {
+              "connections": 200,
+              "status": "healthy",
+              "reqPerSec": 32934.4,
+              "latencyAvgMs": 5.54,
+              "latencyP99Ms": 7,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-02-json-api-deno-c200-d5-p1-2026-03-13T00-18-33-944Z.json"
+            },
+            {
+              "connections": 400,
+              "status": "healthy",
+              "reqPerSec": 31745.6,
+              "latencyAvgMs": 12.1,
+              "latencyP99Ms": 14,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-02-json-api-deno-c400-d5-p1-2026-03-13T00-18-38-977Z.json"
+            },
+            {
+              "connections": 800,
+              "status": "healthy",
+              "reqPerSec": 26603.2,
+              "latencyAvgMs": 29.54,
+              "latencyP99Ms": 44,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-02-json-api-deno-c800-d5-p1-2026-03-13T00-18-44-020Z.json"
+            },
+            {
+              "connections": 1200,
+              "status": "healthy",
+              "reqPerSec": 30017.6,
+              "latencyAvgMs": 39.35,
+              "latencyP99Ms": 62,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-02-json-api-deno-c1200-d5-p1-2026-03-13T00-18-49-092Z.json"
+            },
+            {
+              "connections": 1600,
+              "status": "healthy",
+              "reqPerSec": 28123.2,
+              "latencyAvgMs": 56.4,
+              "latencyP99Ms": 101,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-02-json-api-deno-c1600-d5-p1-2026-03-13T00-18-54-176Z.json"
+            },
+            {
+              "connections": 2000,
+              "status": "healthy",
+              "reqPerSec": 30593.6,
+              "latencyAvgMs": 64.7,
+              "latencyP99Ms": 73,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-02-json-api-deno-c2000-d5-p1-2026-03-13T00-18-59-246Z.json"
+            },
+            {
+              "connections": 2400,
+              "status": "healthy",
+              "reqPerSec": 28497.6,
+              "latencyAvgMs": 83.49,
+              "latencyP99Ms": 144,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-02-json-api-deno-c2400-d5-p1-2026-03-13T00-19-04-326Z.json"
+            },
+            {
+              "connections": 2800,
+              "status": "healthy",
+              "reqPerSec": 30558.4,
+              "latencyAvgMs": 90.82,
+              "latencyP99Ms": 193,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-02-json-api-deno-c2800-d5-p1-2026-03-13T00-19-09-417Z.json"
+            },
+            {
+              "connections": 3200,
+              "status": "healthy",
+              "reqPerSec": 30619.2,
+              "latencyAvgMs": 103.56,
+              "latencyP99Ms": 246,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-02-json-api-deno-c3200-d5-p1-2026-03-13T00-19-14-518Z.json"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "scenario": "03-routing",
+      "lowestCommonDenominator": 3200,
+      "platforms": {
+        "node": {
+          "platform": "node",
+          "highestHealthyConnections": 3200,
+          "peakReqPerSec": 32566.4,
+          "peakReqPerSecConnections": 400,
+          "stages": [
+            {
+              "connections": 100,
+              "status": "healthy",
+              "reqPerSec": 31924.8,
+              "latencyAvgMs": 2.62,
+              "latencyP99Ms": 4,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-03-routing-node-c100-d5-p1-2026-03-13T00-19-22-867Z.json"
+            },
+            {
+              "connections": 200,
+              "status": "healthy",
+              "reqPerSec": 29892.8,
+              "latencyAvgMs": 6.21,
+              "latencyP99Ms": 8,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-03-routing-node-c200-d5-p1-2026-03-13T00-19-27-895Z.json"
+            },
+            {
+              "connections": 400,
+              "status": "healthy",
+              "reqPerSec": 32566.4,
+              "latencyAvgMs": 11.77,
+              "latencyP99Ms": 14,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-03-routing-node-c400-d5-p1-2026-03-13T00-19-32-928Z.json"
+            },
+            {
+              "connections": 800,
+              "status": "healthy",
+              "reqPerSec": 30280,
+              "latencyAvgMs": 19.24,
+              "latencyP99Ms": 33,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-03-routing-node-c800-d5-p1-2026-03-13T00-19-37-979Z.json"
+            },
+            {
+              "connections": 1200,
+              "status": "healthy",
+              "reqPerSec": 29254.4,
+              "latencyAvgMs": 21.29,
+              "latencyP99Ms": 31,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-03-routing-node-c1200-d5-p1-2026-03-13T00-19-43-041Z.json"
+            },
+            {
+              "connections": 1600,
+              "status": "healthy",
+              "reqPerSec": 30283.2,
+              "latencyAvgMs": 21.78,
+              "latencyP99Ms": 33,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-03-routing-node-c1600-d5-p1-2026-03-13T00-19-48-106Z.json"
+            },
+            {
+              "connections": 2000,
+              "status": "healthy",
+              "reqPerSec": 26401.6,
+              "latencyAvgMs": 24.32,
+              "latencyP99Ms": 37,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-03-routing-node-c2000-d5-p1-2026-03-13T00-19-53-188Z.json"
+            },
+            {
+              "connections": 2400,
+              "status": "healthy",
+              "reqPerSec": 27476.8,
+              "latencyAvgMs": 26.77,
+              "latencyP99Ms": 35,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-03-routing-node-c2400-d5-p1-2026-03-13T00-19-58-287Z.json"
+            },
+            {
+              "connections": 2800,
+              "status": "healthy",
+              "reqPerSec": 28456,
+              "latencyAvgMs": 29.89,
+              "latencyP99Ms": 42,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-03-routing-node-c2800-d5-p1-2026-03-13T00-20-03-400Z.json"
+            },
+            {
+              "connections": 3200,
+              "status": "healthy",
+              "reqPerSec": 29230.4,
+              "latencyAvgMs": 30.76,
+              "latencyP99Ms": 43,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-03-routing-node-c3200-d5-p1-2026-03-13T00-20-08-533Z.json"
+            }
+          ]
+        },
+        "bun": {
+          "platform": "bun",
+          "highestHealthyConnections": 3200,
+          "peakReqPerSec": 41174.4,
+          "peakReqPerSecConnections": 200,
+          "stages": [
+            {
+              "connections": 100,
+              "status": "healthy",
+              "reqPerSec": 38499.2,
+              "latencyAvgMs": 2.23,
+              "latencyP99Ms": 5,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-03-routing-bun-c100-d5-p1-2026-03-13T00-20-16-271Z.json"
+            },
+            {
+              "connections": 200,
+              "status": "healthy",
+              "reqPerSec": 41174.4,
+              "latencyAvgMs": 4.43,
+              "latencyP99Ms": 6,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-03-routing-bun-c200-d5-p1-2026-03-13T00-20-21-298Z.json"
+            },
+            {
+              "connections": 400,
+              "status": "healthy",
+              "reqPerSec": 39555.2,
+              "latencyAvgMs": 9.62,
+              "latencyP99Ms": 13,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-03-routing-bun-c400-d5-p1-2026-03-13T00-20-26-329Z.json"
+            },
+            {
+              "connections": 800,
+              "status": "healthy",
+              "reqPerSec": 35024,
+              "latencyAvgMs": 22.33,
+              "latencyP99Ms": 28,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-03-routing-bun-c800-d5-p1-2026-03-13T00-20-31-372Z.json"
+            },
+            {
+              "connections": 1200,
+              "status": "healthy",
+              "reqPerSec": 39260.81,
+              "latencyAvgMs": 30.04,
+              "latencyP99Ms": 36,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-03-routing-bun-c1200-d5-p1-2026-03-13T00-20-36-425Z.json"
+            },
+            {
+              "connections": 1600,
+              "status": "healthy",
+              "reqPerSec": 37275.2,
+              "latencyAvgMs": 42.35,
+              "latencyP99Ms": 91,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-03-routing-bun-c1600-d5-p1-2026-03-13T00-20-41-487Z.json"
+            },
+            {
+              "connections": 2000,
+              "status": "healthy",
+              "reqPerSec": 35793.6,
+              "latencyAvgMs": 55.3,
+              "latencyP99Ms": 92,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-03-routing-bun-c2000-d5-p1-2026-03-13T00-20-46-566Z.json"
+            },
+            {
+              "connections": 2400,
+              "status": "healthy",
+              "reqPerSec": 32588.8,
+              "latencyAvgMs": 73.07,
+              "latencyP99Ms": 172,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-03-routing-bun-c2400-d5-p1-2026-03-13T00-20-51-653Z.json"
+            },
+            {
+              "connections": 2800,
+              "status": "healthy",
+              "reqPerSec": 36392,
+              "latencyAvgMs": 76.32,
+              "latencyP99Ms": 234,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-03-routing-bun-c2800-d5-p1-2026-03-13T00-20-56-748Z.json"
+            },
+            {
+              "connections": 3200,
+              "status": "healthy",
+              "reqPerSec": 34976,
+              "latencyAvgMs": 90.75,
+              "latencyP99Ms": 374,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-03-routing-bun-c3200-d5-p1-2026-03-13T00-21-01-856Z.json"
+            }
+          ]
+        },
+        "deno": {
+          "platform": "deno",
+          "highestHealthyConnections": 3200,
+          "peakReqPerSec": 33299.2,
+          "peakReqPerSecConnections": 200,
+          "stages": [
+            {
+              "connections": 100,
+              "status": "healthy",
+              "reqPerSec": 31988.8,
+              "latencyAvgMs": 2.64,
+              "latencyP99Ms": 4,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-03-routing-deno-c100-d5-p1-2026-03-13T00-21-09-606Z.json"
+            },
+            {
+              "connections": 200,
+              "status": "healthy",
+              "reqPerSec": 33299.2,
+              "latencyAvgMs": 5.48,
+              "latencyP99Ms": 7,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-03-routing-deno-c200-d5-p1-2026-03-13T00-21-14-632Z.json"
+            },
+            {
+              "connections": 400,
+              "status": "healthy",
+              "reqPerSec": 33289.6,
+              "latencyAvgMs": 11.51,
+              "latencyP99Ms": 14,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-03-routing-deno-c400-d5-p1-2026-03-13T00-21-19-663Z.json"
+            },
+            {
+              "connections": 800,
+              "status": "healthy",
+              "reqPerSec": 31312,
+              "latencyAvgMs": 25.02,
+              "latencyP99Ms": 37,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-03-routing-deno-c800-d5-p1-2026-03-13T00-21-24-710Z.json"
+            },
+            {
+              "connections": 1200,
+              "status": "healthy",
+              "reqPerSec": 29832,
+              "latencyAvgMs": 39.57,
+              "latencyP99Ms": 61,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-03-routing-deno-c1200-d5-p1-2026-03-13T00-21-29-797Z.json"
+            },
+            {
+              "connections": 1600,
+              "status": "healthy",
+              "reqPerSec": 31948.8,
+              "latencyAvgMs": 49.53,
+              "latencyP99Ms": 57,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-03-routing-deno-c1600-d5-p1-2026-03-13T00-21-34-863Z.json"
+            },
+            {
+              "connections": 2000,
+              "status": "healthy",
+              "reqPerSec": 32425.6,
+              "latencyAvgMs": 61.05,
+              "latencyP99Ms": 69,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-03-routing-deno-c2000-d5-p1-2026-03-13T00-21-39-932Z.json"
+            },
+            {
+              "connections": 2400,
+              "status": "healthy",
+              "reqPerSec": 29134.4,
+              "latencyAvgMs": 81.59,
+              "latencyP99Ms": 142,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-03-routing-deno-c2400-d5-p1-2026-03-13T00-21-45-015Z.json"
+            },
+            {
+              "connections": 2800,
+              "status": "healthy",
+              "reqPerSec": 31240,
+              "latencyAvgMs": 88.84,
+              "latencyP99Ms": 198,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-03-routing-deno-c2800-d5-p1-2026-03-13T00-21-50-114Z.json"
+            },
+            {
+              "connections": 3200,
+              "status": "healthy",
+              "reqPerSec": 29960,
+              "latencyAvgMs": 106.05,
+              "latencyP99Ms": 336,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-03-routing-deno-c3200-d5-p1-2026-03-13T00-21-55-224Z.json"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "scenario": "04-schema-validation",
+      "lowestCommonDenominator": 3200,
+      "platforms": {
+        "node": {
+          "platform": "node",
+          "highestHealthyConnections": 3200,
+          "peakReqPerSec": 23576,
+          "peakReqPerSecConnections": 400,
+          "stages": [
+            {
+              "connections": 100,
+              "status": "healthy",
+              "reqPerSec": 22872,
+              "latencyAvgMs": 3.82,
+              "latencyP99Ms": 7,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-04-schema-validation-node-c100-d5-p1-2026-03-13T00-22-03-576Z.json"
+            },
+            {
+              "connections": 200,
+              "status": "healthy",
+              "reqPerSec": 22193.6,
+              "latencyAvgMs": 8.53,
+              "latencyP99Ms": 14,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-04-schema-validation-node-c200-d5-p1-2026-03-13T00-22-08-606Z.json"
+            },
+            {
+              "connections": 400,
+              "status": "healthy",
+              "reqPerSec": 23576,
+              "latencyAvgMs": 16.45,
+              "latencyP99Ms": 25,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-04-schema-validation-node-c400-d5-p1-2026-03-13T00-22-13-640Z.json"
+            },
+            {
+              "connections": 800,
+              "status": "healthy",
+              "reqPerSec": 22881.6,
+              "latencyAvgMs": 22.95,
+              "latencyP99Ms": 35,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-04-schema-validation-node-c800-d5-p1-2026-03-13T00-22-18-685Z.json"
+            },
+            {
+              "connections": 1200,
+              "status": "healthy",
+              "reqPerSec": 20958.41,
+              "latencyAvgMs": 27.36,
+              "latencyP99Ms": 39,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-04-schema-validation-node-c1200-d5-p1-2026-03-13T00-22-23-740Z.json"
+            },
+            {
+              "connections": 1600,
+              "status": "healthy",
+              "reqPerSec": 20833.6,
+              "latencyAvgMs": 29.43,
+              "latencyP99Ms": 44,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-04-schema-validation-node-c1600-d5-p1-2026-03-13T00-22-28-805Z.json"
+            },
+            {
+              "connections": 2000,
+              "status": "healthy",
+              "reqPerSec": 20991.2,
+              "latencyAvgMs": 28.3,
+              "latencyP99Ms": 46,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-04-schema-validation-node-c2000-d5-p1-2026-03-13T00-22-33-882Z.json"
+            },
+            {
+              "connections": 2400,
+              "status": "healthy",
+              "reqPerSec": 21700.8,
+              "latencyAvgMs": 32.43,
+              "latencyP99Ms": 47,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-04-schema-validation-node-c2400-d5-p1-2026-03-13T00-22-38-973Z.json"
+            },
+            {
+              "connections": 2800,
+              "status": "healthy",
+              "reqPerSec": 21169.6,
+              "latencyAvgMs": 35.54,
+              "latencyP99Ms": 53,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-04-schema-validation-node-c2800-d5-p1-2026-03-13T00-22-44-087Z.json"
+            },
+            {
+              "connections": 3200,
+              "status": "healthy",
+              "reqPerSec": 19896.8,
+              "latencyAvgMs": 42.13,
+              "latencyP99Ms": 74,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-04-schema-validation-node-c3200-d5-p1-2026-03-13T00-22-49-230Z.json"
+            }
+          ]
+        },
+        "bun": {
+          "platform": "bun",
+          "highestHealthyConnections": 3200,
+          "peakReqPerSec": 30145.6,
+          "peakReqPerSecConnections": 100,
+          "stages": [
+            {
+              "connections": 100,
+              "status": "healthy",
+              "reqPerSec": 30145.6,
+              "latencyAvgMs": 2.75,
+              "latencyP99Ms": 5,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-04-schema-validation-bun-c100-d5-p1-2026-03-13T00-22-56-971Z.json"
+            },
+            {
+              "connections": 200,
+              "status": "healthy",
+              "reqPerSec": 24689.6,
+              "latencyAvgMs": 7.61,
+              "latencyP99Ms": 14,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-04-schema-validation-bun-c200-d5-p1-2026-03-13T00-23-02-000Z.json"
+            },
+            {
+              "connections": 400,
+              "status": "healthy",
+              "reqPerSec": 27368,
+              "latencyAvgMs": 14.11,
+              "latencyP99Ms": 25,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-04-schema-validation-bun-c400-d5-p1-2026-03-13T00-23-07-033Z.json"
+            },
+            {
+              "connections": 800,
+              "status": "healthy",
+              "reqPerSec": 28881.6,
+              "latencyAvgMs": 27.15,
+              "latencyP99Ms": 33,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-04-schema-validation-bun-c800-d5-p1-2026-03-13T00-23-12-077Z.json"
+            },
+            {
+              "connections": 1200,
+              "status": "healthy",
+              "reqPerSec": 27348.8,
+              "latencyAvgMs": 43.28,
+              "latencyP99Ms": 57,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-04-schema-validation-bun-c1200-d5-p1-2026-03-13T00-23-17-135Z.json"
+            },
+            {
+              "connections": 1600,
+              "status": "healthy",
+              "reqPerSec": 27400,
+              "latencyAvgMs": 57.66,
+              "latencyP99Ms": 82,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-04-schema-validation-bun-c1600-d5-p1-2026-03-13T00-23-22-205Z.json"
+            },
+            {
+              "connections": 2000,
+              "status": "healthy",
+              "reqPerSec": 22673.6,
+              "latencyAvgMs": 87.45,
+              "latencyP99Ms": 271,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-04-schema-validation-bun-c2000-d5-p1-2026-03-13T00-23-27-288Z.json"
+            },
+            {
+              "connections": 2400,
+              "status": "healthy",
+              "reqPerSec": 25547.2,
+              "latencyAvgMs": 93.1,
+              "latencyP99Ms": 389,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-04-schema-validation-bun-c2400-d5-p1-2026-03-13T00-23-32-376Z.json"
+            },
+            {
+              "connections": 2800,
+              "status": "healthy",
+              "reqPerSec": 24011.2,
+              "latencyAvgMs": 115.44,
+              "latencyP99Ms": 503,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-04-schema-validation-bun-c2800-d5-p1-2026-03-13T00-23-37-486Z.json"
+            },
+            {
+              "connections": 3200,
+              "status": "healthy",
+              "reqPerSec": 21857.6,
+              "latencyAvgMs": 145.01,
+              "latencyP99Ms": 1077,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-04-schema-validation-bun-c3200-d5-p1-2026-03-13T00-23-42-619Z.json"
+            }
+          ]
+        },
+        "deno": {
+          "platform": "deno",
+          "highestHealthyConnections": 3200,
+          "peakReqPerSec": 19966.41,
+          "peakReqPerSecConnections": 1600,
+          "stages": [
+            {
+              "connections": 100,
+              "status": "healthy",
+              "reqPerSec": 14672.8,
+              "latencyAvgMs": 6.31,
+              "latencyP99Ms": 12,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-04-schema-validation-deno-c100-d5-p1-2026-03-13T00-23-50-582Z.json"
+            },
+            {
+              "connections": 200,
+              "status": "healthy",
+              "reqPerSec": 16483.2,
+              "latencyAvgMs": 11.62,
+              "latencyP99Ms": 28,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-04-schema-validation-deno-c200-d5-p1-2026-03-13T00-23-55-627Z.json"
+            },
+            {
+              "connections": 400,
+              "status": "healthy",
+              "reqPerSec": 12187.2,
+              "latencyAvgMs": 32.29,
+              "latencyP99Ms": 63,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-04-schema-validation-deno-c400-d5-p1-2026-03-13T00-24-00-662Z.json"
+            },
+            {
+              "connections": 800,
+              "status": "healthy",
+              "reqPerSec": 17575.2,
+              "latencyAvgMs": 44.86,
+              "latencyP99Ms": 73,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-04-schema-validation-deno-c800-d5-p1-2026-03-13T00-24-05-719Z.json"
+            },
+            {
+              "connections": 1200,
+              "status": "healthy",
+              "reqPerSec": 18562.41,
+              "latencyAvgMs": 63.98,
+              "latencyP99Ms": 87,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-04-schema-validation-deno-c1200-d5-p1-2026-03-13T00-24-10-783Z.json"
+            },
+            {
+              "connections": 1600,
+              "status": "healthy",
+              "reqPerSec": 19966.41,
+              "latencyAvgMs": 79.24,
+              "latencyP99Ms": 90,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-04-schema-validation-deno-c1600-d5-p1-2026-03-13T00-24-15-844Z.json"
+            },
+            {
+              "connections": 2000,
+              "status": "healthy",
+              "reqPerSec": 18516.8,
+              "latencyAvgMs": 106.67,
+              "latencyP99Ms": 155,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-04-schema-validation-deno-c2000-d5-p1-2026-03-13T00-24-20-921Z.json"
+            },
+            {
+              "connections": 2400,
+              "status": "healthy",
+              "reqPerSec": 17854.41,
+              "latencyAvgMs": 132.95,
+              "latencyP99Ms": 262,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-04-schema-validation-deno-c2400-d5-p1-2026-03-13T00-24-26-009Z.json"
+            },
+            {
+              "connections": 2800,
+              "status": "healthy",
+              "reqPerSec": 19028.8,
+              "latencyAvgMs": 145.01,
+              "latencyP99Ms": 273,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-04-schema-validation-deno-c2800-d5-p1-2026-03-13T00-24-31-111Z.json"
+            },
+            {
+              "connections": 3200,
+              "status": "healthy",
+              "reqPerSec": 16024,
+              "latencyAvgMs": 195.02,
+              "latencyP99Ms": 373,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-04-schema-validation-deno-c3200-d5-p1-2026-03-13T00-24-36-221Z.json"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "scenario": "05-middleware-chain",
+      "lowestCommonDenominator": 3200,
+      "platforms": {
+        "node": {
+          "platform": "node",
+          "highestHealthyConnections": 3200,
+          "peakReqPerSec": 29819.2,
+          "peakReqPerSecConnections": 200,
+          "stages": [
+            {
+              "connections": 100,
+              "status": "healthy",
+              "reqPerSec": 28795.2,
+              "latencyAvgMs": 3,
+              "latencyP99Ms": 5,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-05-middleware-chain-node-c100-d5-p1-2026-03-13T00-24-44-566Z.json"
+            },
+            {
+              "connections": 200,
+              "status": "healthy",
+              "reqPerSec": 29819.2,
+              "latencyAvgMs": 6.21,
+              "latencyP99Ms": 12,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-05-middleware-chain-node-c200-d5-p1-2026-03-13T00-24-49-600Z.json"
+            },
+            {
+              "connections": 400,
+              "status": "healthy",
+              "reqPerSec": 26440,
+              "latencyAvgMs": 14.62,
+              "latencyP99Ms": 24,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-05-middleware-chain-node-c400-d5-p1-2026-03-13T00-24-54-639Z.json"
+            },
+            {
+              "connections": 800,
+              "status": "healthy",
+              "reqPerSec": 16004,
+              "latencyAvgMs": 31.17,
+              "latencyP99Ms": 86,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-05-middleware-chain-node-c800-d5-p1-2026-03-13T00-24-59-741Z.json"
+            },
+            {
+              "connections": 1200,
+              "status": "healthy",
+              "reqPerSec": 11768.4,
+              "latencyAvgMs": 37.83,
+              "latencyP99Ms": 72,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-05-middleware-chain-node-c1200-d5-p1-2026-03-13T00-25-04-877Z.json"
+            },
+            {
+              "connections": 1600,
+              "status": "healthy",
+              "reqPerSec": 22551.2,
+              "latencyAvgMs": 27.64,
+              "latencyP99Ms": 38,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-05-middleware-chain-node-c1600-d5-p1-2026-03-13T00-25-09-982Z.json"
+            },
+            {
+              "connections": 2000,
+              "status": "healthy",
+              "reqPerSec": 27684.8,
+              "latencyAvgMs": 24.4,
+              "latencyP99Ms": 36,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-05-middleware-chain-node-c2000-d5-p1-2026-03-13T00-25-15-067Z.json"
+            },
+            {
+              "connections": 2400,
+              "status": "healthy",
+              "reqPerSec": 26120,
+              "latencyAvgMs": 28.93,
+              "latencyP99Ms": 43,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-05-middleware-chain-node-c2400-d5-p1-2026-03-13T00-25-20-161Z.json"
+            },
+            {
+              "connections": 2800,
+              "status": "healthy",
+              "reqPerSec": 26072,
+              "latencyAvgMs": 30.48,
+              "latencyP99Ms": 46,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-05-middleware-chain-node-c2800-d5-p1-2026-03-13T00-25-25-297Z.json"
+            },
+            {
+              "connections": 3200,
+              "status": "healthy",
+              "reqPerSec": 21521.6,
+              "latencyAvgMs": 43.13,
+              "latencyP99Ms": 67,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-05-middleware-chain-node-c3200-d5-p1-2026-03-13T00-25-30-456Z.json"
+            }
+          ]
+        },
+        "bun": {
+          "platform": "bun",
+          "highestHealthyConnections": 3200,
+          "peakReqPerSec": 32870.4,
+          "peakReqPerSecConnections": 100,
+          "stages": [
+            {
+              "connections": 100,
+              "status": "healthy",
+              "reqPerSec": 32870.4,
+              "latencyAvgMs": 2.47,
+              "latencyP99Ms": 5,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-05-middleware-chain-bun-c100-d5-p1-2026-03-13T00-25-38-195Z.json"
+            },
+            {
+              "connections": 200,
+              "status": "healthy",
+              "reqPerSec": 32627.2,
+              "latencyAvgMs": 5.64,
+              "latencyP99Ms": 9,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-05-middleware-chain-bun-c200-d5-p1-2026-03-13T00-25-43-236Z.json"
+            },
+            {
+              "connections": 400,
+              "status": "healthy",
+              "reqPerSec": 29192,
+              "latencyAvgMs": 13.2,
+              "latencyP99Ms": 17,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-05-middleware-chain-bun-c400-d5-p1-2026-03-13T00-25-48-274Z.json"
+            },
+            {
+              "connections": 800,
+              "status": "healthy",
+              "reqPerSec": 31019.2,
+              "latencyAvgMs": 25.22,
+              "latencyP99Ms": 50,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-05-middleware-chain-bun-c800-d5-p1-2026-03-13T00-25-53-337Z.json"
+            },
+            {
+              "connections": 1200,
+              "status": "healthy",
+              "reqPerSec": 29444.8,
+              "latencyAvgMs": 40.28,
+              "latencyP99Ms": 59,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-05-middleware-chain-bun-c1200-d5-p1-2026-03-13T00-25-58-419Z.json"
+            },
+            {
+              "connections": 1600,
+              "status": "healthy",
+              "reqPerSec": 30076.8,
+              "latencyAvgMs": 52.58,
+              "latencyP99Ms": 70,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-05-middleware-chain-bun-c1600-d5-p1-2026-03-13T00-26-03-495Z.json"
+            },
+            {
+              "connections": 2000,
+              "status": "healthy",
+              "reqPerSec": 29323.2,
+              "latencyAvgMs": 67.64,
+              "latencyP99Ms": 174,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-05-middleware-chain-bun-c2000-d5-p1-2026-03-13T00-26-08-591Z.json"
+            },
+            {
+              "connections": 2400,
+              "status": "healthy",
+              "reqPerSec": 29726.4,
+              "latencyAvgMs": 80.11,
+              "latencyP99Ms": 284,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-05-middleware-chain-bun-c2400-d5-p1-2026-03-13T00-26-13-687Z.json"
+            },
+            {
+              "connections": 2800,
+              "status": "healthy",
+              "reqPerSec": 32812.81,
+              "latencyAvgMs": 84.61,
+              "latencyP99Ms": 315,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-05-middleware-chain-bun-c2800-d5-p1-2026-03-13T00-26-18-784Z.json"
+            },
+            {
+              "connections": 3200,
+              "status": "healthy",
+              "reqPerSec": 32304,
+              "latencyAvgMs": 98.15,
+              "latencyP99Ms": 446,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-05-middleware-chain-bun-c3200-d5-p1-2026-03-13T00-26-23-911Z.json"
+            }
+          ]
+        },
+        "deno": {
+          "platform": "deno",
+          "highestHealthyConnections": 3200,
+          "peakReqPerSec": 28452.8,
+          "peakReqPerSecConnections": 200,
+          "stages": [
+            {
+              "connections": 100,
+              "status": "healthy",
+              "reqPerSec": 25105.6,
+              "latencyAvgMs": 3.48,
+              "latencyP99Ms": 8,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-05-middleware-chain-deno-c100-d5-p1-2026-03-13T00-26-31-854Z.json"
+            },
+            {
+              "connections": 200,
+              "status": "healthy",
+              "reqPerSec": 28452.8,
+              "latencyAvgMs": 6.49,
+              "latencyP99Ms": 9,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-05-middleware-chain-deno-c200-d5-p1-2026-03-13T00-26-36-889Z.json"
+            },
+            {
+              "connections": 400,
+              "status": "healthy",
+              "reqPerSec": 27643.2,
+              "latencyAvgMs": 13.96,
+              "latencyP99Ms": 17,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-05-middleware-chain-deno-c400-d5-p1-2026-03-13T00-26-41-924Z.json"
+            },
+            {
+              "connections": 800,
+              "status": "healthy",
+              "reqPerSec": 24660.8,
+              "latencyAvgMs": 31.88,
+              "latencyP99Ms": 54,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-05-middleware-chain-deno-c800-d5-p1-2026-03-13T00-26-46-969Z.json"
+            },
+            {
+              "connections": 1200,
+              "status": "healthy",
+              "reqPerSec": 27358.4,
+              "latencyAvgMs": 43.28,
+              "latencyP99Ms": 50,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-05-middleware-chain-deno-c1200-d5-p1-2026-03-13T00-26-52-023Z.json"
+            },
+            {
+              "connections": 1600,
+              "status": "healthy",
+              "reqPerSec": 25083.2,
+              "latencyAvgMs": 63.11,
+              "latencyP99Ms": 118,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-05-middleware-chain-deno-c1600-d5-p1-2026-03-13T00-26-57-085Z.json"
+            },
+            {
+              "connections": 2000,
+              "status": "healthy",
+              "reqPerSec": 24484.8,
+              "latencyAvgMs": 80.82,
+              "latencyP99Ms": 103,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-05-middleware-chain-deno-c2000-d5-p1-2026-03-13T00-27-02-165Z.json"
+            },
+            {
+              "connections": 2400,
+              "status": "healthy",
+              "reqPerSec": 23880,
+              "latencyAvgMs": 99.5,
+              "latencyP99Ms": 174,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-05-middleware-chain-deno-c2400-d5-p1-2026-03-13T00-27-07-264Z.json"
+            },
+            {
+              "connections": 2800,
+              "status": "healthy",
+              "reqPerSec": 26216,
+              "latencyAvgMs": 105.9,
+              "latencyP99Ms": 259,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-05-middleware-chain-deno-c2800-d5-p1-2026-03-13T00-27-12-386Z.json"
+            },
+            {
+              "connections": 3200,
+              "status": "healthy",
+              "reqPerSec": 26334.4,
+              "latencyAvgMs": 120.18,
+              "latencyP99Ms": 276,
+              "errors": 0,
+              "timeouts": 0,
+              "resultFile": "/Users/davidpeter/workspace/type-driven.com/platform-deno-smol/benchmarks/results/stress-sweep-05-middleware-chain-deno-c3200-d5-p1-2026-03-13T00-27-17-494Z.json"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "globalLowestCommonDenominator": 3200,
+  "confirmationAttempts": [
+    {
+      "connections": 3200,
+      "successful": false
+    },
+    {
+      "connections": 2800,
+      "successful": false
+    },
+    {
+      "connections": 2400,
+      "successful": false
+    },
+    {
+      "connections": 2000,
+      "successful": false
+    },
+    {
+      "connections": 1600,
+      "successful": false
+    },
+    {
+      "connections": 1200,
+      "successful": false
+    },
+    {
+      "connections": 800,
+      "successful": false
+    },
+    {
+      "connections": 400,
+      "successful": false
+    },
+    {
+      "connections": 200,
+      "successful": false
+    },
+    {
+      "connections": 100,
+      "successful": false
+    }
+  ],
+  "confirmSearchSummaryBaseName": "stress-confirm-search-summary"
+}

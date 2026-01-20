@@ -1,0 +1,44 @@
+{
+  "scenario": "03-routing",
+  "platform": "node",
+  "suite": "stress-confirm",
+  "nodeVersion": "v22.22.0",
+  "bunVersion": "1.3.10",
+  "denoVersion": "2.6.9 (stable, release, aarch64-apple-darwin)",
+  "timestamp": "2026-03-13T00:48:15.200Z",
+  "config": {
+    "connections": 2400,
+    "duration": 10,
+    "pipelining": 1
+  },
+  "results": {
+    "requests": {
+      "total": 246838,
+      "average": 27428.45,
+      "mean": 27428.45,
+      "stddev": 4118.9,
+      "min": 17062,
+      "max": 32006,
+      "p50": 28415,
+      "p99": 32015
+    },
+    "latency": {
+      "average": 37.97,
+      "mean": 37.97,
+      "stddev": 199.89,
+      "min": 3,
+      "max": 9970,
+      "p50": 25,
+      "p99": 66
+    },
+    "throughput": {
+      "average": 6225351.12,
+      "mean": 6225351.12,
+      "stddev": 934443.64,
+      "min": 3873074,
+      "max": 7265362
+    },
+    "errors": 1523,
+    "timeouts": 1523
+  }
+}

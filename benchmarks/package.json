@@ -1,0 +1,27 @@
+{
+  "name": "@effect/benchmarks",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "bench:all": "node --import tsx/esm harness/run.ts",
+    "bench:stress": "node --import tsx/esm harness/stress.ts",
+    "bench:hello-world": "node --import tsx/esm harness/run.ts --scenario 01-hello-world",
+    "bench:json-api": "node --import tsx/esm harness/run.ts --scenario 02-json-api",
+    "bench:routing": "node --import tsx/esm harness/run.ts --scenario 03-routing",
+    "bench:schema-validation": "node --import tsx/esm harness/run.ts --scenario 04-schema-validation",
+    "bench:middleware-chain": "node --import tsx/esm harness/run.ts --scenario 05-middleware-chain",
+    "collect": "node --import tsx/esm harness/collect-results.ts",
+    "test": "vitest --config vitest.config.ts"
+  },
+  "dependencies": {
+    "@effect/platform-bun": "workspace:*",
+    "@effect/platform-deno": "workspace:*",
+    "@effect/platform-node": "workspace:*",
+    "@effect/platform-node-shared": "workspace:*",
+    "autocannon": "^8.0.0",
+    "effect": "workspace:*"
+  },
+  "devDependencies": {
+    "tsx": "^4.0.0"
+  }
+}

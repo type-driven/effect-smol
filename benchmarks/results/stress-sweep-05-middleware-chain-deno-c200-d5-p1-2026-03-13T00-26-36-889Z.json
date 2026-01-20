@@ -1,0 +1,44 @@
+{
+  "scenario": "05-middleware-chain",
+  "platform": "deno",
+  "suite": "stress-sweep",
+  "nodeVersion": "v22.22.0",
+  "bunVersion": "1.3.10",
+  "denoVersion": "2.6.9 (stable, release, aarch64-apple-darwin)",
+  "timestamp": "2026-03-13T00:26:36.889Z",
+  "config": {
+    "connections": 200,
+    "duration": 5,
+    "pipelining": 1
+  },
+  "results": {
+    "requests": {
+      "total": 142262,
+      "average": 28452.8,
+      "mean": 28452.8,
+      "stddev": 1183.59,
+      "min": 26092,
+      "max": 29095,
+      "p50": 29039,
+      "p99": 29103
+    },
+    "latency": {
+      "average": 6.49,
+      "mean": 6.49,
+      "stddev": 0.85,
+      "min": 1,
+      "max": 28,
+      "p50": 6,
+      "p99": 9
+    },
+    "throughput": {
+      "average": 8165376,
+      "mean": 8165376,
+      "stddev": 338261.17,
+      "min": 7488404,
+      "max": 8350265
+    },
+    "errors": 0,
+    "timeouts": 0
+  }
+}

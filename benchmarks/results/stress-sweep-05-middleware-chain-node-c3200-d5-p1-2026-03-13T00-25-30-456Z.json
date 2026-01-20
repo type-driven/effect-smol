@@ -1,0 +1,44 @@
+{
+  "scenario": "05-middleware-chain",
+  "platform": "node",
+  "suite": "stress-sweep",
+  "nodeVersion": "v22.22.0",
+  "bunVersion": "1.3.10",
+  "denoVersion": "2.6.9 (stable, release, aarch64-apple-darwin)",
+  "timestamp": "2026-03-13T00:25:30.456Z",
+  "config": {
+    "connections": 3200,
+    "duration": 5,
+    "pipelining": 1
+  },
+  "results": {
+    "requests": {
+      "total": 107598,
+      "average": 21521.6,
+      "mean": 21521.6,
+      "stddev": 2130.65,
+      "min": 18407,
+      "max": 24084,
+      "p50": 22191,
+      "p99": 24095
+    },
+    "latency": {
+      "average": 43.13,
+      "mean": 43.13,
+      "stddev": 97.23,
+      "min": 6,
+      "max": 5036,
+      "p50": 37,
+      "p99": 67
+    },
+    "throughput": {
+      "average": 6692454.4,
+      "mean": 6692454.4,
+      "stddev": 662173.1,
+      "min": 5724577,
+      "max": 7490124
+    },
+    "errors": 0,
+    "timeouts": 0
+  }
+}

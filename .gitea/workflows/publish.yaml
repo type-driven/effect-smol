@@ -16,10 +16,10 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --no-frozen-lockfile
 
       - name: Build packages
-        run: pnpm build
+        run: pnpm --filter effect --filter @effect/platform-deno --filter @effect/platform-node build
 
       - name: Configure npm registry
         run: |

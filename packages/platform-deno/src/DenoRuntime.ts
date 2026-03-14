@@ -60,7 +60,7 @@ export const runMain: {
     receivedSignal = true
     Deno.removeSignalListener("SIGINT", onSigint)
     Deno.removeSignalListener("SIGTERM", onSigint)
-    fiber.unsafeInterrupt(fiber.id)
+    fiber.interruptUnsafe(fiber.id)
   }
 
   Deno.addSignalListener("SIGINT", onSigint)

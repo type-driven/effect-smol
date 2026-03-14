@@ -5,6 +5,7 @@ import * as Effect from "effect/Effect"
 import * as Fiber from "effect/Fiber"
 import { flow } from "effect/Function"
 import * as Layer from "effect/Layer"
+import * as Option from "effect/Option"
 import * as Scheduler from "effect/Scheduler"
 import * as Scope from "effect/Scope"
 import * as ServiceMap from "effect/ServiceMap"
@@ -138,8 +139,8 @@ export const makeHandler = <
       let response: globalThis.Response | undefined
       let resolve: ((response: globalThis.Response) => void) | undefined
       const remoteAddr = info.remoteAddr
-      const serverRequest = Request.fromWeb(webRequest, {
-        remoteAddress: remoteAddr && "hostname" in remoteAddr ? remoteAddr.hostname : undefined
+      const serverRequest = Request.fromWeb(webRequest).modify({
+        remoteAddress: Option.fromUndefinedOr(remoteAddr && "hostname" in remoteAddr ? remoteAddr.hostname : undefined)
       })
       ;(serverRequest as any)[resolveSymbol] = (webResponse: globalThis.Response) => {
         if (resolve === undefined) {
@@ -170,12 +171,17 @@ export const makeHandler = <
 const toWebSimple = (
   response: HttpServerResponse,
   body: unknown
-): globalThis.Response =>
-  new globalThis.Response(body as any, {
-    status: response.status,
-    statusText: response.statusText,
-    headers: toWebSimpleHeaders(response.headers)
-  })
+): globalThis.Response => {
+  const init: globalThis.ResponseInit = { status: response.status }
+  const headers = toWebSimpleHeaders(response.headers)
+  if (headers !== undefined) {
+    init.headers = headers
+  }
+  if (response.statusText !== undefined) {
+    init.statusText = response.statusText
+  }
+  return new globalThis.Response(body as any, init)
+}
 
 const toWebSimpleHeaders = (headers: HttpServerResponse["headers"]) => {
   const contentType = headers["content-type"]

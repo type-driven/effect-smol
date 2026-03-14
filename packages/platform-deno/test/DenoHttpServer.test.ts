@@ -2,6 +2,7 @@ import * as DenoHttpServer from "@effect/platform-deno/DenoHttpServer"
 import { assert, describe, it, vitest } from "@effect/vitest"
 import * as Effect from "effect/Effect"
 import * as Exit from "effect/Exit"
+import * as Option from "effect/Option"
 import * as Scope from "effect/Scope"
 import * as ServiceMap from "effect/ServiceMap"
 import * as Stream from "effect/Stream"
@@ -87,7 +88,7 @@ describe("DenoHttpServer", () => {
       yield* Effect.addFinalizer(() => Scope.close(scope, Exit.void))
       const handler = yield* DenoHttpServer.makeHandler(
         Effect.map(HttpServerRequest.HttpServerRequest.asEffect(), (request) =>
-          HttpServerResponse.text(request.remoteAddress ?? "missing")),
+          HttpServerResponse.text(Option.getOrElse(request.remoteAddress, () => "missing"))),
         { scope }
       )
 

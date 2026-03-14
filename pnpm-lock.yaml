@@ -462,6 +462,9 @@ importers:
 
   packages/platform-deno:
     dependencies:
+      '@std/fs':
+        specifier: jsr:^1.0.21
+        version: '@jsr/std__fs@1.0.23'
       '@std/path':
         specifier: jsr:^1.1.4
         version: '@jsr/std__path@1.1.4'
@@ -1983,6 +1986,9 @@ packages:
 
   '@jsr/std__assert@1.0.16':
     resolution: {integrity: sha512-bX9ih0nR1kQ12/cnQRCQU0ppTCV7MFkP0qjyWxJRoDI8RC5cpTAmLFH/KcFgxmdN4flKkRbub8VtLuyKq+4OxA==, tarball: https://npm.jsr.io/~/11/@jsr/std__assert/1.0.16.tgz}
+
+  '@jsr/std__fs@1.0.23':
+    resolution: {integrity: sha512-e8jspB3M44E5YhWiLCTqibBBTwVmxQaHN06WvFa/elAKm5E/LfAe8Hj5XGNC8P7a0MIPASlNJsnF1bgO/g+aqg==, tarball: https://npm.jsr.io/~/11/@jsr/std__fs/1.0.23.tgz}
 
   '@jsr/std__internal@1.0.12':
     resolution: {integrity: sha512-6xReMW9p+paJgqoFRpOE2nogJFvzPfaLHLIlyADYjKMUcwDyjKZxryIbgcU+gxiTygn8yCjld1HoI0ET4/iZeA==, tarball: https://npm.jsr.io/~/11/@jsr/std__internal/1.0.12.tgz}
@@ -7819,6 +7825,11 @@ snapshots:
   '@jsr/std__assert@1.0.16':
     dependencies:
       '@jsr/std__internal': 1.0.12
+
+  '@jsr/std__fs@1.0.23':
+    dependencies:
+      '@jsr/std__internal': 1.0.12
+      '@jsr/std__path': 1.1.4
 
   '@jsr/std__internal@1.0.12': {}
 

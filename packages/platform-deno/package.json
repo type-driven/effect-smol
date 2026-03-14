@@ -61,6 +61,7 @@
     "coverage": "vitest --coverage"
   },
   "dependencies": {
+    "@std/fs": "jsr:^1.0.21",
     "@std/path": "jsr:^1.1.4"
   },
   "peerDependencies": {

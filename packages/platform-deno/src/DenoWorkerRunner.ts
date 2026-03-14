@@ -69,10 +69,14 @@ export const make = (self: MessagePort | Window): WorkerRunner.WorkerRunnerPlatf
               const port = ports.get(portId)
               if (!port) {
                 return
-              } else if (ports.size === 1) {
-                // let the last port close with the outer scope
+              }
+
+              Effect.runFork(Queue.offer(disconnects, portId).pipe(Effect.asVoid))
+
+              if (ports.size === 1) {
                 return Deferred.doneUnsafe(closeLatch, Exit.void)
               }
+
               ports.delete(portId)
               Effect.runFork(Scope.close(port[1], Exit.void))
             }
@@ -115,7 +119,7 @@ export const make = (self: MessagePort | Window): WorkerRunner.WorkerRunnerPlatf
             portScope,
             Effect.sync(() => {
               port.removeEventListener("message", onMsg)
-              port.removeEventListener("messageerror", onError)
+              port.removeEventListener("messageerror", onMessageError)
               port.close()
             })
           ))

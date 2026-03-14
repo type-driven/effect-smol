@@ -35,6 +35,8 @@ import * as ServiceMap from "./ServiceMap.ts"
 import * as Tracer from "./Tracer.ts"
 import type * as Types from "./Types.ts"
 
+type ErrorWithStackTraceLimit = typeof Error & { stackTraceLimit: number }
+
 const TypeId = "~effect/Layer"
 
 /**

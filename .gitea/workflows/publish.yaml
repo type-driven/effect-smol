@@ -1,0 +1,53 @@
+name: Build and Publish Packages
+
+on:
+  push:
+    branches: [platform-deno]
+    paths:
+      - "packages/**"
+      - "pnpm-lock.yaml"
+      - ".gitea/workflows/publish.yaml"
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: [self-hosted, linux, amd64]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build packages
+        run: pnpm build
+
+      - name: Configure npm registry
+        run: |
+          cat >> ~/.npmrc <<EOF
+          @effect:registry=https://gitea.platform.typedriven.dev/api/packages/type-driven/npm/
+          //gitea.platform.typedriven.dev/api/packages/type-driven/npm/:_authToken=${{ secrets.NPM_PUBLISH_TOKEN }}
+          EOF
+
+      - name: Publish packages to Gitea registry
+        run: |
+          set -euo pipefail
+          REGISTRY="https://gitea.platform.typedriven.dev/api/packages/type-driven/npm/"
+
+          publish_pkg() {
+            local dir="$1"
+            cd "$dir"
+            node -e "
+              const fs = require('fs');
+              const pkg = JSON.parse(fs.readFileSync('package.json','utf8'));
+              pkg.publishConfig = { registry: '$REGISTRY', access: 'public' };
+              fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));
+            "
+            npm publish --no-git-checks 2>&1 \
+              && echo "Published $dir" \
+              || echo "Skipped $dir (already published or error)"
+            cd -
+          }
+
+          publish_pkg packages/effect
+          publish_pkg packages/platform-deno
+          publish_pkg packages/platform-node

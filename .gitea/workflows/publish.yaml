@@ -18,11 +18,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Configure npm registry
+      - name: Debug npmrc state
         run: |
-          printf '%s\n' \
-            "//gitea.nupaas.com/api/packages/type-driven/npm/:_authToken=${{ secrets.NPM_PUBLISH_TOKEN }}" \
-            >> ~/.npmrc
+          echo "HOME=$HOME"
+          echo "--- ~/.npmrc ---"
+          cat ~/.npmrc 2>/dev/null || echo "(empty)"
+          echo "--- .npmrc ---"
+          cat .npmrc 2>/dev/null || echo "(empty)"
+          echo "--- pnpm config ---"
+          pnpm config list 2>/dev/null || true
 
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile

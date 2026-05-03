@@ -43,15 +43,22 @@ jobs:
 
           publish_pkg() {
             local dir="$1"
+            local rename="${2:-}"
             echo "--- Publishing $dir ---"
             cd "$dir"
+            if [ -n "$rename" ]; then
+              node -e "const fs=require('fs'); const p=JSON.parse(fs.readFileSync('package.json','utf8')); p.name='$rename'; fs.writeFileSync('package.json',JSON.stringify(p,null,2));"
+              echo "  renamed to $rename"
+            fi
             npm publish --registry "$REGISTRY" --no-git-checks 2>&1 \
               && echo "Published $dir" \
               || echo "Skipped $dir (already published or error)"
             cd -
           }
 
-          for dir in packages/effect \
+          publish_pkg packages/effect @type-driven/effect
+
+          for dir in packages/platform-node-shared \
                      packages/platform-node-shared \
                      packages/platform-node \
                      packages/platform-deno \

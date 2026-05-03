@@ -18,15 +18,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
-
       - name: Configure npm registry
         run: |
           printf '%s\n' \
-            "registry=${{ env.REGISTRY_URL }}" \
             "//gitea.nupaas.com/api/packages/type-driven/npm/:_authToken=${{ secrets.NPM_PUBLISH_TOKEN }}" \
             >> ~/.npmrc
+
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
 
       - name: Prepare for publish
         run: |
@@ -39,4 +38,6 @@ jobs:
         run: pnpm codemod && pnpm build
 
       - name: Publish to Gitea registry
-        run: pnpm changeset publish
+        run: |
+          printf '%s\n' "registry=${{ env.REGISTRY_URL }}" >> ~/.npmrc
+          pnpm changeset publish

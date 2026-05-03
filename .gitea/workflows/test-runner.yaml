@@ -1,7 +1,0 @@
-name: Test Runner
-on: [workflow_dispatch]
-jobs:
-  test:
-    runs-on: [self-hosted, linux, amd64]
-    steps:
-      - run: echo "hello from effect-smol" && which pnpm && pnpm --version

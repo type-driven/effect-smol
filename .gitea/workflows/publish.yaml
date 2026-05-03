@@ -18,24 +18,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Debug npmrc state
-        run: |
-          echo "HOME=$HOME"
-          echo "--- ~/.npmrc ---"
-          cat ~/.npmrc 2>/dev/null || echo "(empty)"
-          echo "--- .npmrc ---"
-          cat .npmrc 2>/dev/null || echo "(empty)"
-          echo "--- pnpm config ---"
-          pnpm config list 2>/dev/null || true
-
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
 
       - name: Prepare for publish
         run: |
-          # Strip internals from declarations (matches upstream release flow)
           sed -i 's/"stripInternal": false/"stripInternal": true/' tsconfig.base.json
-          # Remove provenance (GitHub OIDC only, not supported on Gitea)
           find packages -name package.json -exec sed -i '/"provenance": true,\?/d' {} +
 
       - name: Build
@@ -43,5 +31,43 @@ jobs:
 
       - name: Publish to Gitea registry
         run: |
-          printf '%s\n' "registry=${{ env.REGISTRY_URL }}" >> ~/.npmrc
-          pnpm changeset publish
+          set -euo pipefail
+          REGISTRY="${{ env.REGISTRY_URL }}"
+          TOKEN="${{ secrets.NPM_PUBLISH_TOKEN }}"
+
+          printf '%s\n' \
+            "registry=${REGISTRY}" \
+            "@effect:registry=${REGISTRY}" \
+            "//gitea.nupaas.com/api/packages/type-driven/npm/:_authToken=${TOKEN}" \
+            > ~/.npmrc
+
+          publish_pkg() {
+            local dir="$1"
+            echo "--- Publishing $dir ---"
+            cd "$dir"
+            npm publish --registry "$REGISTRY" --no-git-checks 2>&1 \
+              && echo "Published $dir" \
+              || echo "Skipped $dir (already published or error)"
+            cd -
+          }
+
+          for dir in packages/effect \
+                     packages/platform-node-shared \
+                     packages/platform-node \
+                     packages/platform-deno \
+                     packages/platform-bun \
+                     packages/platform-browser \
+                     packages/opentelemetry \
+                     packages/vitest \
+                     packages/ai/anthropic \
+                     packages/ai/openai \
+                     packages/ai/openai-compat \
+                     packages/ai/openrouter \
+                     packages/sql/pg \
+                     packages/sql/libsql \
+                     packages/sql/sqlite-node \
+                     packages/sql/mysql2 \
+                     packages/sql/mssql \
+                     packages/sql/clickhouse; do
+            publish_pkg "$dir"
+          done

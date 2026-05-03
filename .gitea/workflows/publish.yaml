@@ -9,6 +9,9 @@ on:
       - ".gitea/workflows/publish.yaml"
   workflow_dispatch:
 
+env:
+  REGISTRY_URL: https://gitea.nupaas.com/api/packages/type-driven/npm/
+
 jobs:
   publish:
     runs-on: [self-hosted, linux, amd64]
@@ -18,36 +21,22 @@ jobs:
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
 
-      - name: Build packages
-        run: pnpm --filter effect --filter @effect/platform-deno --filter @effect/platform-node build
-
       - name: Configure npm registry
         run: |
-          cat >> ~/.npmrc <<EOF
-          @effect:registry=https://gitea.platform.typedriven.dev/api/packages/type-driven/npm/
-          //gitea.platform.typedriven.dev/api/packages/type-driven/npm/:_authToken=${{ secrets.NPM_PUBLISH_TOKEN }}
-          EOF
+          printf '%s\n' \
+            "registry=${{ env.REGISTRY_URL }}" \
+            "//gitea.nupaas.com/api/packages/type-driven/npm/:_authToken=${{ secrets.NPM_PUBLISH_TOKEN }}" \
+            >> ~/.npmrc
 
-      - name: Publish packages to Gitea registry
+      - name: Prepare for publish
         run: |
-          set -euo pipefail
-          REGISTRY="https://gitea.platform.typedriven.dev/api/packages/type-driven/npm/"
+          # Strip internals from declarations (matches upstream release flow)
+          sed -i 's/"stripInternal": false/"stripInternal": true/' tsconfig.base.json
+          # Remove provenance (GitHub OIDC only, not supported on Gitea)
+          find packages -name package.json -exec sed -i '/"provenance": true,\?/d' {} +
 
-          publish_pkg() {
-            local dir="$1"
-            cd "$dir"
-            node -e "
-              const fs = require('fs');
-              const pkg = JSON.parse(fs.readFileSync('package.json','utf8'));
-              pkg.publishConfig = { registry: '$REGISTRY', access: 'public' };
-              fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));
-            "
-            npm publish --no-git-checks 2>&1 \
-              && echo "Published $dir" \
-              || echo "Skipped $dir (already published or error)"
-            cd -
-          }
+      - name: Build
+        run: pnpm codemod && pnpm build
 
-          publish_pkg packages/effect
-          publish_pkg packages/platform-deno
-          publish_pkg packages/platform-node
+      - name: Publish to Gitea registry
+        run: pnpm changeset publish

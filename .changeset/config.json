@@ -3,8 +3,8 @@
   "changelog": ["@changesets/changelog-github", { "repo": "Effect-TS/effect-smol" }],
   "commit": false,
   "linked": [],
-  "access": "restricted",
-  "baseBranch": "main",
+  "access": "public",
+  "baseBranch": "platform-deno",
   "updateInternalDependencies": "patch",
   "ignore": [
     "scratchpad",

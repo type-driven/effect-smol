@@ -1,51 +1,144 @@
 /**
+ * Defines endpoint declarations used inside an HTTP API group.
+ *
+ * An endpoint records a stable identifier, HTTP method, router path, request schemas,
+ * response schemas, declared errors, middleware, and annotations. Endpoint
+ * values are declarations, not handlers: builders use them to decode requests,
+ * type handler input, encode responses, generate OpenAPI metadata, and derive
+ * generated-client call signatures. This module also includes HTTP method
+ * constructors, payload and response schema helpers, and type utilities used by
+ * builders and generated clients.
+ *
  * @since 4.0.0
  */
 import * as Arr from "../../Array.ts"
 import type { Brand } from "../../Brand.ts"
+import * as Context from "../../Context.ts"
 import type { Effect } from "../../Effect.ts"
+import { identity } from "../../Function.ts"
 import { type Pipeable, pipeArguments } from "../../Pipeable.ts"
 import * as Predicate from "../../Predicate.ts"
 import * as Schema from "../../Schema.ts"
-import * as ServiceMap from "../../ServiceMap.ts"
+import * as AST from "../../SchemaAST.ts"
 import type * as Stream from "../../Stream.ts"
+import type { Simplify } from "../../Struct.ts"
 import type * as Types from "../../Types.ts"
 import type { HttpMethod } from "../http/HttpMethod.ts"
 import * as HttpRouter from "../http/HttpRouter.ts"
 import type { HttpServerRequest } from "../http/HttpServerRequest.ts"
 import type { HttpServerResponse } from "../http/HttpServerResponse.ts"
 import type * as Multipart from "../http/Multipart.ts"
-import { BadRequestFromSchemaError, type BadRequestNoContent } from "./HttpApiError.ts"
 import type * as HttpApiGroup from "./HttpApiGroup.ts"
 import type * as HttpApiMiddleware from "./HttpApiMiddleware.ts"
 import * as HttpApiSchema from "./HttpApiSchema.ts"
+import * as MediaType from "./internal/mediaType.ts"
 
 const TypeId = "~effect/httpapi/HttpApiEndpoint"
 
 /**
- * @since 4.0.0
+ * Returns `true` when a value is an `HttpApiEndpoint`, narrowing the value to the
+ * endpoint interface.
+ *
  * @category guards
+ * @since 4.0.0
  */
-export const isHttpApiEndpoint = (u: unknown): u is HttpApiEndpoint<any, any, any> => Predicate.hasProperty(u, TypeId)
+export const isHttpApiEndpoint = (u: unknown): u is Top => Predicate.hasProperty(u, TypeId)
+
+type SuccessType<S> = S extends HttpApiSchema.StreamSse<
+  infer _Events,
+  infer _Error,
+  infer _Value
+> ? Stream.Stream<_Value, _Error["Type"], never>
+  : S extends HttpApiSchema.StreamUint8Array ? Stream.Stream<Uint8Array, unknown, never>
+  : S extends Schema.Constraint ? S["Type"]
+  : never
+
+type SuccessEncodingServices<S> = S extends HttpApiSchema.StreamSse<
+  infer _Events,
+  infer _Error,
+  infer _Value
+> ? _Events["EncodingServices"] | _Error["EncodingServices"]
+  : S extends HttpApiSchema.StreamUint8Array ? never
+  : S extends Schema.Constraint ? S["EncodingServices"]
+  : never
+
+type SuccessDecodingServices<S> = S extends HttpApiSchema.StreamSse<
+  infer _Events,
+  infer _Error,
+  infer _Value
+> ? _Events["DecodingServices"] | _Error["DecodingServices"]
+  : S extends HttpApiSchema.StreamUint8Array ? never
+  : S extends Schema.Constraint ? S["DecodingServices"]
+  : never
+
+type UnwrapReadonlyArray<S> = S extends ReadonlyArray<infer A> ? A : S
+
+type ExtractBufferedSuccess<S extends SuccessConstraint> = Exclude<
+  Extract<UnwrapReadonlyArray<S>, Schema.Top>,
+  HttpApiSchema.StreamSchema
+>
+
+type ExtractStreamSuccess<S extends SuccessConstraint> = UnwrapReadonlyArray<S> extends infer Success ?
+  Success extends HttpApiSchema.StreamSchema ? Success : never
+  : never
+
+type ToSuccessCodec<S extends SuccessConstraint> = [ExtractBufferedSuccess<S>] extends [never] ? ExtractStreamSuccess<S>
+  : Schema.toCodecJson<ExtractBufferedSuccess<S>> | ExtractStreamSuccess<S>
+
+type ToJsonCodec<S> = [S] extends [never] ? never
+  : [S] extends [Schema.Constraint] ? Schema.toCodecJson<S>
+  : never
+
+type ToStringTreeCodec<S> = [S] extends [never] ? never
+  : [S] extends [Schema.Struct.Fields] ? Schema.toCodecStringTree<Schema.Struct<S>>
+  : [S] extends [Schema.Constraint] ? Schema.toCodecStringTree<S>
+  : never
+
+type RequestFromParts<Endpoint, ParamsType, QueryType, PayloadType, HeadersType> =
+  & ([ParamsType] extends [never] ? {} : { readonly params: Simplify<ParamsType> })
+  & ([QueryType] extends [never] ? {} : { readonly query: Simplify<QueryType> })
+  & ([PayloadType] extends [never] ? {}
+    : PayloadType extends Brand<HttpApiSchema.MultipartStreamTypeId> ?
+      { readonly payload: Stream.Stream<Multipart.Part, Multipart.MultipartError> }
+    : { readonly payload: Simplify<PayloadType> })
+  & ([HeadersType] extends [never] ? {} : { readonly headers: Simplify<HeadersType> })
+  & {
+    readonly request: HttpServerRequest
+    readonly endpoint: Endpoint
+    readonly group: HttpApiGroup.Top
+  }
+
+type RequestRawFromParts<Endpoint, ParamsType, QueryType, HeadersType> =
+  & ([ParamsType] extends [never] ? {} : { readonly params: Simplify<ParamsType> })
+  & ([QueryType] extends [never] ? {} : { readonly query: Simplify<QueryType> })
+  & ([HeadersType] extends [never] ? {} : { readonly headers: Simplify<HeadersType> })
+  & {
+    readonly request: HttpServerRequest
+    readonly endpoint: Endpoint
+    readonly group: HttpApiGroup.Top
+  }
 
 /**
- * @since 4.0.0
+ * Maps normalized media types to a payload encoding strategy and one or more
+ * schemas. Each schema retains its declared content type in its encoding annotation.
+ *
  * @category models
+ * @since 4.0.0
  */
 export type PayloadMap = ReadonlyMap<string, {
   readonly encoding: HttpApiSchema.PayloadEncoding
-  readonly schemas: [Schema.Top, ...Array<Schema.Top>]
+  readonly schemas: readonly [Schema.Top, ...Array<Schema.Top>]
 }>
 
 /**
  * Represents an API endpoint. An API endpoint is mapped to a single route on
  * the underlying `HttpRouter`.
  *
- * @since 4.0.0
  * @category models
+ * @since 4.0.0
  */
 export interface HttpApiEndpoint<
-  out Name extends string,
+  out Identifier extends string,
   out Method extends HttpMethod,
   out Path extends string,
   out Params extends Schema.Top = never,
@@ -53,21 +146,24 @@ export interface HttpApiEndpoint<
   out Payload extends Schema.Top = never,
   out Headers extends Schema.Top = never,
   out Success extends Schema.Top = typeof HttpApiSchema.NoContent,
-  out Error extends Schema.Top = typeof BadRequestNoContent,
+  out Error extends Schema.Top = never,
   in out Middleware = never,
-  out MiddlewareR = never
+  out MiddlewareServices = never
 > extends Pipeable {
-  readonly [TypeId]: {
-    readonly _MiddlewareR: Types.Covariant<MiddlewareR>
-  }
+  new(_: never): {}
+  readonly [TypeId]: typeof TypeId
   readonly "~Params": Params
   readonly "~Query": Query
   readonly "~Headers": Headers
   readonly "~Payload": Payload
   readonly "~Success": Success
   readonly "~Error": Error
+  readonly "~Middleware": Middleware
+  readonly "~MiddlewareServices": MiddlewareServices
+  readonly "~Request": RequestFromParts<this, Params["Type"], Query["Type"], Payload["Type"], Headers["Type"]>
+  readonly "~RequestRaw": RequestRawFromParts<this, Params["Type"], Query["Type"], Headers["Type"]>
 
-  readonly name: Name
+  readonly identifier: Identifier
   readonly path: Path
   readonly method: Method
   readonly params: Schema.Top | undefined
@@ -76,8 +172,8 @@ export interface HttpApiEndpoint<
   readonly payload: PayloadMap
   readonly success: ReadonlySet<Schema.Top>
   readonly error: ReadonlySet<Schema.Top>
-  readonly annotations: ServiceMap.ServiceMap<never>
-  readonly middlewares: ReadonlySet<ServiceMap.Key<Middleware, any>>
+  readonly annotations: Context.Context<never>
+  readonly middlewares: ReadonlySet<Context.Key<Middleware, any>>
 
   /**
    * Add a prefix to the path of the endpoint.
@@ -85,7 +181,7 @@ export interface HttpApiEndpoint<
   prefix<const Prefix extends HttpRouter.PathInput>(
     prefix: Prefix
   ): HttpApiEndpoint<
-    Name,
+    Identifier,
     Method,
     `${Prefix}${Path}`,
     Params,
@@ -95,14 +191,14 @@ export interface HttpApiEndpoint<
     Success,
     Error,
     Middleware,
-    MiddlewareR
+    MiddlewareServices
   >
 
   /**
    * Add an `HttpApiMiddleware` to the endpoint.
    */
-  middleware<I extends HttpApiMiddleware.AnyId, S>(middleware: ServiceMap.Key<I, S>): HttpApiEndpoint<
-    Name,
+  middleware<I extends HttpApiMiddleware.AnyId, S>(middleware: Context.Key<I, S>): HttpApiEndpoint<
+    Identifier,
     Method,
     Path,
     Params,
@@ -112,17 +208,17 @@ export interface HttpApiEndpoint<
     Success,
     Error,
     Middleware | I,
-    HttpApiMiddleware.ApplyServices<I, MiddlewareR>
+    HttpApiMiddleware.ApplyServices<I, MiddlewareServices>
   >
 
   /**
    * Add an annotation on the endpoint.
    */
   annotate<I, S>(
-    key: ServiceMap.Key<I, S>,
+    key: Context.Key<I, S>,
     value: Types.NoInfer<S>
   ): HttpApiEndpoint<
-    Name,
+    Identifier,
     Method,
     Path,
     Params,
@@ -132,16 +228,16 @@ export interface HttpApiEndpoint<
     Success,
     Error,
     Middleware,
-    MiddlewareR
+    MiddlewareServices
   >
 
   /**
-   * Merge the annotations of the endpoint with the provided service map.
+   * Merge the annotations of the endpoint with the provided context.
    */
   annotateMerge<I>(
-    annotations: ServiceMap.ServiceMap<I>
+    annotations: Context.Context<I>
   ): HttpApiEndpoint<
-    Name,
+    Identifier,
     Method,
     Path,
     Params,
@@ -151,12 +247,12 @@ export interface HttpApiEndpoint<
     Success,
     Error,
     Middleware,
-    MiddlewareR
+    MiddlewareServices
   >
 }
 
 /** @internal */
-export function getPayloadSchemas(endpoint: AnyWithProps): Array<Schema.Top> {
+export function getPayloadSchemas(endpoint: Top): Array<Schema.Top> {
   const result: Array<Schema.Top> = []
   for (const { schemas } of endpoint.payload.values()) {
     result.push(...schemas)
@@ -165,318 +261,229 @@ export function getPayloadSchemas(endpoint: AnyWithProps): Array<Schema.Top> {
 }
 
 /** @internal */
-export function getSuccessSchemas(endpoint: AnyWithProps): [Schema.Top, ...Array<Schema.Top>] {
+export function getSuccessSchemas(endpoint: Top): [Schema.Top, ...Array<Schema.Top>] {
   const schemas = Array.from(endpoint.success)
   return Arr.isArrayNonEmpty(schemas) ? schemas : [HttpApiSchema.NoContent]
 }
 
 /** @internal */
-export function getErrorSchemas(endpoint: AnyWithProps): [Schema.Top, ...Array<Schema.Top>] {
+export function getErrorSchemas(endpoint: Top): Array<Schema.Top> {
   const schemas = new Set<Schema.Top>(endpoint.error)
   for (const middleware of endpoint.middlewares) {
     const key = middleware as any as HttpApiMiddleware.AnyService
-    if (key.error !== undefined) {
-      schemas.add(key.error)
+    for (const schema of key.error) {
+      schemas.add(schema)
     }
   }
-  return Arr.append(Array.from(schemas), BadRequestFromSchemaError)
+  return Array.from(schemas)
 }
 
 /**
- * @since 4.0.0
+ * A widened `HttpApiEndpoint` type used when the concrete method, path, schemas,
+ * and middleware types are not needed.
+ *
  * @category models
+ * @since 4.0.0
  */
-export interface Any extends Pipeable {
-  readonly [TypeId]: any
-  readonly name: string
-  readonly ["~Success"]: Schema.Top
-  readonly ["~Error"]: Schema.Top
+export interface Constraint {
+  readonly [TypeId]: typeof TypeId
+  readonly identifier: string
+  readonly ["~Success"]: Schema.Constraint
+  readonly ["~Error"]: Schema.Constraint
+  readonly ["~Request"]: unknown
+  readonly ["~RequestRaw"]: unknown
 }
 
 /**
- * @since 4.0.0
+ * A widened endpoint type that preserves request and middleware pipeline phantom fields.
+ *
  * @category models
+ * @since 4.0.0
  */
-export interface AnyWithProps
-  extends HttpApiEndpoint<string, HttpMethod, string, Schema.Top, Schema.Top, Schema.Top, Schema.Top, any, any>
+export interface ConstraintRequest extends Constraint {
+  readonly ["~Params"]: Schema.Constraint
+  readonly ["~Query"]: Schema.Constraint
+  readonly ["~Payload"]: Schema.Constraint
+  readonly ["~Headers"]: Schema.Constraint
+  readonly ["~Middleware"]: unknown
+}
+
+/**
+ * A widened endpoint type that preserves concrete runtime properties such as
+ * method, path, schemas, annotations, and middleware sets.
+ *
+ * @category models
+ * @since 4.0.0
+ */
+export interface Top extends
+  HttpApiEndpoint<
+    string,
+    HttpMethod,
+    string,
+    Schema.Top,
+    Schema.Top,
+    Schema.Top,
+    Schema.Top,
+    Schema.Top,
+    Schema.Top,
+    any,
+    unknown
+  >
 {}
 
 /**
- * @since 4.0.0
+ * Extracts the endpoint identifier literal from an `HttpApiEndpoint`.
+ *
  * @category models
+ * @since 4.0.0
  */
-export type Name<Endpoint> = Endpoint extends HttpApiEndpoint<
-  infer _Name,
-  infer _Method,
-  infer _Path,
-  infer _Params,
-  infer _Query,
-  infer _Payload,
-  infer _Headers,
-  infer _Success,
-  infer _Error,
-  infer _M,
-  infer _MR
-> ? _Name
+export type Identifier<Endpoint> = Endpoint extends Constraint ? Endpoint["identifier"] : never
+
+/**
+ * Extracts the success schema associated with an endpoint.
+ *
+ * @category models
+ * @since 4.0.0
+ */
+export type Success<Endpoint> = Endpoint extends Constraint ? Endpoint["~Success"] : never
+
+/**
+ * Extracts the error schema associated with an endpoint.
+ *
+ * @category models
+ * @since 4.0.0
+ */
+export type Error<Endpoint> = Endpoint extends Constraint ? Endpoint["~Error"] : never
+
+/**
+ * Extracts the schema used for an endpoint's path parameters.
+ *
+ * @category models
+ * @since 4.0.0
+ */
+export type Params<Endpoint> = Endpoint extends ConstraintRequest ? Endpoint["~Params"]
   : never
 
 /**
- * @since 4.0.0
+ * Extracts the schema used for an endpoint's query parameters.
+ *
  * @category models
+ * @since 4.0.0
  */
-export type Success<Endpoint extends Any> = Endpoint extends HttpApiEndpoint<
-  infer _Name,
-  infer _Method,
-  infer _Path,
-  infer _Params,
-  infer _Query,
-  infer _Payload,
-  infer _Headers,
-  infer _Success,
-  infer _Error,
-  infer _M,
-  infer _MR
-> ? _Success
+export type Query<Endpoint> = Endpoint extends ConstraintRequest ? Endpoint["~Query"]
   : never
 
 /**
- * @since 4.0.0
+ * Extracts the schema used for an endpoint's request payload.
+ *
  * @category models
+ * @since 4.0.0
  */
-export type Error<Endpoint extends Any> = Endpoint extends HttpApiEndpoint<
-  infer _Name,
-  infer _Method,
-  infer _Path,
-  infer _Params,
-  infer _Query,
-  infer _Payload,
-  infer _Headers,
-  infer _Success,
-  infer _Error,
-  infer _M,
-  infer _MR
-> ? _Error
+export type Payload<Endpoint> = Endpoint extends ConstraintRequest ? Endpoint["~Payload"]
   : never
 
 /**
- * @since 4.0.0
+ * Extracts the schema used for an endpoint's request headers.
+ *
  * @category models
+ * @since 4.0.0
  */
-export type Params<Endpoint extends Any> = Endpoint extends HttpApiEndpoint<
-  infer _Name,
-  infer _Method,
-  infer _Path,
-  infer _Params,
-  infer _Query,
-  infer _Payload,
-  infer _Headers,
-  infer _Success,
-  infer _Error,
-  infer _M,
-  infer _MR
-> ? _Params
+export type Headers<Endpoint> = Endpoint extends ConstraintRequest ? Endpoint["~Headers"]
   : never
 
 /**
- * @since 4.0.0
+ * Extracts the middleware identifiers attached to an endpoint.
+ *
  * @category models
+ * @since 4.0.0
  */
-export type Query<Endpoint extends Any> = Endpoint extends HttpApiEndpoint<
-  infer _Name,
-  infer _Method,
-  infer _Path,
-  infer _Params,
-  infer _Query,
-  infer _Payload,
-  infer _Headers,
-  infer _Success,
-  infer _Error,
-  infer _M,
-  infer _MR
-> ? _Query
+export type Middleware<Endpoint> = Endpoint extends { readonly "~Middleware": infer M } ? M
   : never
 
 /**
- * @since 4.0.0
+ * Computes the services provided by the middleware attached to an endpoint.
+ *
  * @category models
+ * @since 4.0.0
  */
-export type Payload<Endpoint extends Any> = Endpoint extends HttpApiEndpoint<
-  infer _Name,
-  infer _Method,
-  infer _Path,
-  infer _Params,
-  infer _Query,
-  infer _Payload,
-  infer _Headers,
-  infer _Success,
-  infer _Error,
-  infer _M,
-  infer _MR
-> ? _Payload
+export type MiddlewareProvides<Endpoint> = HttpApiMiddleware.Provides<Middleware<Endpoint>>
+
+/**
+ * Computes the client-side middleware services required by an endpoint.
+ *
+ * @category models
+ * @since 4.0.0
+ */
+export type MiddlewareClient<Endpoint> = HttpApiMiddleware.MiddlewareClient<Middleware<Endpoint>>
+
+/**
+ * Computes the error types that can be produced by the middleware attached to an
+ * endpoint.
+ *
+ * @category models
+ * @since 4.0.0
+ */
+export type MiddlewareError<Endpoint> = HttpApiMiddleware.Error<Middleware<Endpoint>>
+
+/**
+ * Computes the full error value union for an endpoint, including the endpoint
+ * error schema's type and errors introduced by middleware.
+ *
+ * @category models
+ * @since 4.0.0
+ */
+export type Errors<Endpoint> = Endpoint extends ConstraintRequest ?
+  Endpoint["~Error"]["Type"] | HttpApiMiddleware.Error<Endpoint["~Middleware"]>
   : never
 
 /**
- * @since 4.0.0
+ * Computes the services required to encode an endpoint's error responses,
+ * including services required by middleware error encoders.
+ *
  * @category models
+ * @since 4.0.0
  */
-export type Headers<Endpoint extends Any> = Endpoint extends HttpApiEndpoint<
-  infer _Name,
-  infer _Method,
-  infer _Path,
-  infer _Params,
-  infer _Query,
-  infer _Payload,
-  infer _Headers,
-  infer _Success,
-  infer _Error,
-  infer _M,
-  infer _MR
-> ? _Headers
+export type ErrorServicesEncode<Endpoint> = Endpoint extends ConstraintRequest ?
+    | Endpoint["~Error"]["EncodingServices"]
+    | HttpApiMiddleware.ErrorServicesEncode<Endpoint["~Middleware"]>
   : never
 
 /**
- * @since 4.0.0
+ * Builds the decoded request shape passed to a normal endpoint handler, including
+ * available params, query, payload, headers, the raw request, endpoint, and group.
+ * Multipart stream payloads are exposed as streams of parts.
+ *
  * @category models
- */
-export type Middleware<Endpoint extends Any> = Endpoint extends HttpApiEndpoint<
-  infer _Name,
-  infer _Method,
-  infer _Path,
-  infer _Params,
-  infer _Query,
-  infer _Payload,
-  infer _Headers,
-  infer _Success,
-  infer _Error,
-  infer _M,
-  infer _MR
-> ? _M
-  : never
-
-/**
  * @since 4.0.0
- * @category models
  */
-export type MiddlewareProvides<Endpoint extends Any> = HttpApiMiddleware.Provides<Middleware<Endpoint>>
-
-/**
- * @since 4.0.0
- * @category models
- */
-export type MiddlewareClient<Endpoint extends Any> = HttpApiMiddleware.MiddlewareClient<Middleware<Endpoint>>
-
-/**
- * @since 4.0.0
- * @category models
- */
-export type MiddlewareError<Endpoint extends Any> = HttpApiMiddleware.Error<Middleware<Endpoint>>
-
-/**
- * @since 4.0.0
- * @category models
- */
-export type Errors<Endpoint extends Any> = Endpoint extends HttpApiEndpoint<
-  infer _Name,
-  infer _Method,
-  infer _Path,
-  infer _Params,
-  infer _Query,
-  infer _Payload,
-  infer _Headers,
-  infer _Success,
-  infer _Error,
-  infer _M,
-  infer _MR
-> ? _Error["Type"] | HttpApiMiddleware.Error<Middleware<Endpoint>>
-  : never
-
-/**
- * @since 4.0.0
- * @category models
- */
-export type ErrorServicesEncode<Endpoint extends Any> = Endpoint extends HttpApiEndpoint<
-  infer _Name,
-  infer _Method,
-  infer _Path,
-  infer _Params,
-  infer _Query,
-  infer _Payload,
-  infer _Headers,
-  infer _Success,
-  infer _Error,
-  infer _M,
-  infer _MR
-> ? _Error["EncodingServices"] | HttpApiMiddleware.ErrorServicesEncode<Middleware<Endpoint>>
-  : never
-
-/**
- * @since 4.0.0
- * @category models
- */
-export type Request<Endpoint extends Any> = Endpoint extends HttpApiEndpoint<
-  infer _Name,
-  infer _Method,
-  infer _Path,
-  infer _Params,
-  infer _Query,
-  infer _Payload,
-  infer _Headers,
-  infer _Success,
-  infer _Error,
-  infer _M,
-  infer _MR
-> ?
-    & ([_Params["Type"]] extends [never] ? {} : { readonly params: _Params["Type"] })
-    & ([_Query["Type"]] extends [never] ? {} : { readonly query: _Query["Type"] })
-    & ([_Payload["Type"]] extends [never] ? {}
-      : _Payload["Type"] extends Brand<HttpApiSchema.MultipartStreamTypeId> ?
-        { readonly payload: Stream.Stream<Multipart.Part, Multipart.MultipartError> }
-      : { readonly payload: _Payload["Type"] })
-    & ([_Headers] extends [never] ? {} : { readonly headers: _Headers["Type"] })
-    & {
-      readonly request: HttpServerRequest
-      readonly endpoint: Endpoint
-      readonly group: HttpApiGroup.AnyWithProps
-    }
+export type Request<Endpoint> = Endpoint extends ConstraintRequest ? Endpoint["~Request"]
   : {}
 
 /**
- * @since 4.0.0
+ * Builds the request shape passed to a raw endpoint handler, including decoded
+ * params, query, and headers plus the raw request, endpoint, and group, while
+ * leaving payload handling to the raw request.
+ *
  * @category models
+ * @since 4.0.0
  */
-export type RequestRaw<Endpoint extends Any> = Endpoint extends HttpApiEndpoint<
-  infer _Name,
-  infer _Method,
-  infer _Path,
-  infer _Params,
-  infer _Query,
-  infer _Payload,
-  infer _Headers,
-  infer _Success,
-  infer _Error,
-  infer _M,
-  infer _MR
-> ?
-    & ([_Params["Type"]] extends [never] ? {} : { readonly params: _Params["Type"] })
-    & ([_Query["Type"]] extends [never] ? {} : { readonly query: _Query["Type"] })
-    & ([_Headers["Type"]] extends [never] ? {} : { readonly headers: _Headers["Type"] })
-    & {
-      readonly request: HttpServerRequest
-      readonly endpoint: Endpoint
-      readonly group: HttpApiGroup.AnyWithProps
-    }
+export type RequestRaw<Endpoint> = Endpoint extends ConstraintRequest ? Endpoint["~RequestRaw"]
   : {}
 
 /**
- * @since 4.0.0
+ * Builds the request object accepted by a generated client method, including only
+ * the params, query, headers, payload, and response mode fields required by the
+ * endpoint. Multipart payloads are supplied as `FormData`.
+ *
  * @category models
+ * @since 4.0.0
  */
 export type ClientRequest<
-  Params extends Schema.Top,
-  Query extends Schema.Top,
-  Payload extends Schema.Top,
-  Headers extends Schema.Top,
-  WithResponse extends boolean
+  Params extends Schema.Constraint,
+  Query extends Schema.Constraint,
+  Payload extends Schema.Constraint,
+  Headers extends Schema.Constraint,
+  ResponseMode extends ClientResponseMode
 > = (
   & ([Params["Type"]] extends [never] ? {} : { readonly params: Params["Type"] })
   & ([Query["Type"]] extends [never] ? {} : { readonly query: Query["Type"] })
@@ -487,208 +494,231 @@ export type ClientRequest<
         ? { readonly payload: FormData }
       : { readonly payload: Payload["Type"] }
     : { readonly payload: Payload["Type"] })
-) extends infer Req ? keyof Req extends never ? (void | { readonly withResponse?: WithResponse }) :
-  Req & { readonly withResponse?: WithResponse } :
+) extends infer Req ? keyof Req extends never ? (void | { readonly responseMode?: ResponseMode }) :
+  Req & { readonly responseMode?: ResponseMode } :
   void
 
 /**
- * @since 4.0.0
+ * Controls what a generated client method returns: the decoded success value,
+ * the decoded value paired with the raw response, or only the raw response.
+ *
  * @category models
+ * @since 4.0.0
  */
-export type ServerServices<Endpoint> = Endpoint extends HttpApiEndpoint<
-  infer _Name,
-  infer _Method,
-  infer _Path,
-  infer _Params,
-  infer _Query,
-  infer _Payload,
-  infer _Headers,
-  infer _Success,
-  infer _Error,
-  infer _M,
-  infer _MR
-> ?
-    | _Params["DecodingServices"]
-    | _Query["DecodingServices"]
-    | _Payload["DecodingServices"]
-    | _Headers["DecodingServices"]
-    | _Success["EncodingServices"]
-    | _Error["EncodingServices"]
-    | HttpApiMiddleware.ErrorServicesEncode<_M>
+export type ClientResponseMode = "decoded-only" | "decoded-and-response" | "response-only"
+
+/**
+ * Computes the services required on the server to decode endpoint inputs and
+ * encode endpoint success, error, and middleware error responses.
+ *
+ * @category models
+ * @since 4.0.0
+ */
+export type ServerServices<Endpoint> = Endpoint extends ConstraintRequest ?
+    | Endpoint["~Params"]["DecodingServices"]
+    | Endpoint["~Query"]["DecodingServices"]
+    | Endpoint["~Payload"]["DecodingServices"]
+    | Endpoint["~Headers"]["DecodingServices"]
+    | SuccessEncodingServices<Endpoint["~Success"]>
+    | Endpoint["~Error"]["EncodingServices"]
+    | HttpApiMiddleware.ErrorServicesEncode<Endpoint["~Middleware"]>
   : never
 
 /**
- * @since 4.0.0
+ * Computes the services required on the client to encode endpoint requests and
+ * decode endpoint success or error responses.
+ *
  * @category models
+ * @since 4.0.0
  */
-export type ClientServices<Endpoint> = Endpoint extends HttpApiEndpoint<
-  infer _Name,
-  infer _Method,
-  infer _Path,
-  infer _Params,
-  infer _Query,
-  infer _Payload,
-  infer _Headers,
-  infer _Success,
-  infer _Error,
-  infer _M,
-  infer _MR
-> ?
-    | _Params["EncodingServices"]
-    | _Query["EncodingServices"]
-    | _Payload["EncodingServices"]
-    | _Headers["EncodingServices"]
-    | _Success["DecodingServices"]
-    | _Error["DecodingServices"]
+export type ClientServices<Endpoint> = Endpoint extends ConstraintRequest ?
+    | Endpoint["~Params"]["EncodingServices"]
+    | Endpoint["~Query"]["EncodingServices"]
+    | Endpoint["~Payload"]["EncodingServices"]
+    | Endpoint["~Headers"]["EncodingServices"]
+    | SuccessDecodingServices<Endpoint["~Success"]>
+    | Endpoint["~Error"]["DecodingServices"]
   : never
 
 /**
- * @since 4.0.0
+ * Extracts the additional services required by middleware applied to an endpoint.
+ *
  * @category models
+ * @since 4.0.0
  */
-export type MiddlewareServices<Endpoint> = Endpoint extends HttpApiEndpoint<
-  infer _Name,
-  infer _Method,
-  infer _Path,
-  infer _Params,
-  infer _Query,
-  infer _Payload,
-  infer _Headers,
-  infer _Success,
-  infer _Error,
-  infer _M,
-  infer _MR
-> ? _MR
+export type MiddlewareServices<Endpoint> = Endpoint extends { readonly "~MiddlewareServices": infer R } ? R
   : never
 
 /**
- * @since 4.0.0
+ * Computes the services required to decode an endpoint's error responses,
+ * including services required by middleware error decoders.
+ *
  * @category models
+ * @since 4.0.0
  */
-export type ErrorServicesDecode<Endpoint> = Endpoint extends HttpApiEndpoint<
-  infer _Name,
-  infer _Method,
-  infer _Path,
-  infer _Params,
-  infer _Query,
-  infer _Payload,
-  infer _Headers,
-  infer _Success,
-  infer _Error,
-  infer _M,
-  infer _MR
-> ? _Error["DecodingServices"] | HttpApiMiddleware.ErrorServicesDecode<Middleware<Endpoint>>
+export type ErrorServicesDecode<Endpoint> = Endpoint extends ConstraintRequest ?
+    | Endpoint["~Error"]["DecodingServices"]
+    | HttpApiMiddleware.ErrorServicesDecode<Endpoint["~Middleware"]>
   : never
 
 /**
- * @since 4.0.0
+ * The normal server handler for an endpoint, accepting the decoded request shape
+ * and returning either the endpoint success value or a custom `HttpServerResponse`.
+ *
  * @category models
+ * @since 4.0.0
  */
-export type Handler<Endpoint extends Any, E, R> = (
-  request: Types.Simplify<Request<Endpoint>>
-) => Effect<Endpoint["~Success"]["Type"] | HttpServerResponse, Endpoint["~Error"]["Type"] | E, R>
+export type Handler<Endpoint extends Constraint, E, R> = (
+  request: Simplify<Endpoint["~Request"]>
+) => Effect<SuccessType<Endpoint["~Success"]> | HttpServerResponse, Endpoint["~Error"]["Type"] | E, R>
 
 /**
- * @since 4.0.0
+ * The raw server handler for an endpoint, receiving a request shape without a
+ * decoded payload so the handler can read the raw `HttpServerRequest` directly.
+ *
  * @category models
+ * @since 4.0.0
  */
-export type HandlerRaw<Endpoint extends Any, E, R> = (
-  request: Types.Simplify<RequestRaw<Endpoint>>
-) => Effect<Endpoint["~Success"]["Type"] | HttpServerResponse, Endpoint["~Error"]["Type"] | E, R>
+export type HandlerRaw<Endpoint extends Constraint, E, R> = (
+  request: Simplify<Endpoint["~RequestRaw"]>
+) => Effect<SuccessType<Endpoint["~Success"]> | HttpServerResponse, Endpoint["~Error"]["Type"] | E, R>
 
 /**
- * @since 4.0.0
+ * Selects the endpoint with the specified identifier from a union of endpoints.
+ *
  * @category models
+ * @since 4.0.0
  */
-export type WithName<Endpoints extends Any, Name extends string> = Extract<Endpoints, { readonly name: Name }>
+export type WithIdentifier<Endpoints, Identifier extends string> = Extract<
+  Endpoints,
+  { readonly identifier: Identifier }
+>
 
 /**
- * @since 4.0.0
+ * Removes endpoints with the specified identifier from a union of endpoints.
+ *
  * @category models
+ * @since 4.0.0
  */
-export type ExcludeName<Endpoints extends Any, Name extends string> = Exclude<Endpoints, { readonly name: Name }>
+export type ExcludeIdentifier<Endpoints, Identifier extends string> = Exclude<
+  Endpoints,
+  { readonly identifier: Identifier }
+>
 
 /**
- * @since 4.0.0
+ * Derives the normal handler type for the endpoint with the specified identifier
+ * in an endpoint union.
+ *
  * @category models
+ * @since 4.0.0
  */
-export type HandlerWithName<Endpoints extends Any, Name extends string, E, R> = Handler<
-  WithName<Endpoints, Name>,
+export type HandlerWithIdentifier<Endpoints extends Constraint, Identifier extends string, E, R> = Handler<
+  WithIdentifier<Endpoints, Identifier>,
   E,
   R
 >
 
 /**
- * @since 4.0.0
+ * Derives the raw handler type for the endpoint with the specified identifier in
+ * an endpoint union.
+ *
  * @category models
+ * @since 4.0.0
  */
-export type HandlerRawWithName<Endpoints extends Any, Name extends string, E, R> = HandlerRaw<
-  WithName<Endpoints, Name>,
+export type HandlerRawWithIdentifier<Endpoints extends Constraint, Identifier extends string, E, R> = HandlerRaw<
+  WithIdentifier<Endpoints, Identifier>,
   E,
   R
 >
 
 /**
- * @since 4.0.0
+ * Extracts the decoded success value type for the endpoint with the specified
+ * identifier in an endpoint union.
+ *
  * @category models
+ * @since 4.0.0
  */
-export type SuccessWithName<Endpoints extends Any, Name extends string> = Success<
-  WithName<Endpoints, Name>
->["Type"]
+export type SuccessWithIdentifier<Endpoints extends Constraint, Identifier extends string> = Success<
+  WithIdentifier<Endpoints, Identifier>
+> extends infer S ? SuccessType<S> : never
 
 /**
- * @since 4.0.0
+ * Computes the full error value union for the endpoint with the specified
+ * identifier in an endpoint union.
+ *
  * @category models
- */
-export type ErrorsWithName<Endpoints extends Any, Name extends string> = Errors<WithName<Endpoints, Name>>
-
-/**
  * @since 4.0.0
- * @category models
  */
-export type ServerServicesWithName<Endpoints extends Any, Name extends string> = ServerServices<
-  WithName<Endpoints, Name>
+export type ErrorsWithIdentifier<Endpoints extends Constraint, Identifier extends string> = Errors<
+  WithIdentifier<Endpoints, Identifier>
 >
 
 /**
- * @since 4.0.0
+ * Computes the server-side service requirements for the endpoint with the
+ * specified identifier in an endpoint union.
+ *
  * @category models
- */
-export type MiddlewareWithName<Endpoints extends Any, Name extends string> = Middleware<WithName<Endpoints, Name>>
-
-/**
  * @since 4.0.0
- * @category models
  */
-export type MiddlewareServicesWithName<Endpoints extends Any, Name extends string> = MiddlewareServices<
-  WithName<Endpoints, Name>
+export type ServerServicesWithIdentifier<Endpoints extends Constraint, Identifier extends string> = ServerServices<
+  WithIdentifier<Endpoints, Identifier>
 >
 
 /**
- * @since 4.0.0
+ * Extracts the middleware identifiers for the endpoint with the specified
+ * identifier in an endpoint union.
+ *
  * @category models
+ * @since 4.0.0
  */
-export type ExcludeProvidedWithName<Endpoints extends Any, Name extends string, R> = ExcludeProvided<
-  WithName<Endpoints, Name>,
+export type MiddlewareWithIdentifier<Endpoints extends Constraint, Identifier extends string> = Middleware<
+  WithIdentifier<Endpoints, Identifier>
+>
+
+/**
+ * Extracts the middleware service requirements for the endpoint with the
+ * specified identifier in an endpoint union.
+ *
+ * @category models
+ * @since 4.0.0
+ */
+export type MiddlewareServicesWithIdentifier<Endpoints extends Constraint, Identifier extends string> =
+  MiddlewareServices<WithIdentifier<Endpoints, Identifier>>
+
+/**
+ * Removes services provided by the HTTP router and the selected endpoint's
+ * middleware from a service requirement union.
+ *
+ * @category models
+ * @since 4.0.0
+ */
+export type ExcludeProvidedWithIdentifier<Endpoints extends Constraint, Identifier extends string, R> = ExcludeProvided<
+  WithIdentifier<Endpoints, Identifier>,
   R
 >
 
 /**
- * @since 4.0.0
+ * Removes services provided by the HTTP router and endpoint middleware from a
+ * service requirement union.
+ *
  * @category models
+ * @since 4.0.0
  */
-export type ExcludeProvided<Endpoint extends Any, R> = Exclude<
+export type ExcludeProvided<Endpoint extends Constraint, R> = Exclude<
   R,
   | HttpRouter.Provided
   | HttpApiMiddleware.Provides<Middleware<Endpoint>>
 >
 
 /**
- * @since 4.0.0
+ * Returns an endpoint type with the supplied path prefix prepended while
+ * preserving the endpoint's schemas, method, errors, and middleware.
+ *
  * @category models
+ * @since 4.0.0
  */
-export type AddPrefix<Endpoint extends Any, Prefix extends HttpRouter.PathInput> = Endpoint extends HttpApiEndpoint<
-  infer _Name,
+export type AddPrefix<Endpoint, Prefix extends HttpRouter.PathInput> = Endpoint extends HttpApiEndpoint<
+  infer _Identifier,
   infer _Method,
   infer _Path,
   infer _Params,
@@ -700,7 +730,7 @@ export type AddPrefix<Endpoint extends Any, Prefix extends HttpRouter.PathInput>
   infer _M,
   infer _MR
 > ? HttpApiEndpoint<
-    _Name,
+    _Identifier,
     _Method,
     `${Prefix}${_Path}`,
     _Params,
@@ -715,11 +745,14 @@ export type AddPrefix<Endpoint extends Any, Prefix extends HttpRouter.PathInput>
   never
 
 /**
- * @since 4.0.0
+ * Returns an endpoint type with additional middleware applied and the endpoint's
+ * middleware service requirements updated accordingly.
+ *
  * @category models
+ * @since 4.0.0
  */
-export type AddError<Endpoint extends Any, E extends Schema.Top> = Endpoint extends HttpApiEndpoint<
-  infer _Name,
+export type AddMiddleware<Endpoint, M extends HttpApiMiddleware.AnyId> = Endpoint extends HttpApiEndpoint<
+  infer _Identifier,
   infer _Method,
   infer _Path,
   infer _Params,
@@ -731,38 +764,7 @@ export type AddError<Endpoint extends Any, E extends Schema.Top> = Endpoint exte
   infer _M,
   infer _MR
 > ? HttpApiEndpoint<
-    _Name,
-    _Method,
-    _Path,
-    _Params,
-    _Query,
-    _Payload,
-    _Headers,
-    _Success,
-    _Error | E,
-    _M,
-    _MR
-  > :
-  never
-
-/**
- * @since 4.0.0
- * @category models
- */
-export type AddMiddleware<Endpoint extends Any, M extends HttpApiMiddleware.AnyId> = Endpoint extends HttpApiEndpoint<
-  infer _Name,
-  infer _Method,
-  infer _Path,
-  infer _Params,
-  infer _Query,
-  infer _Payload,
-  infer _Headers,
-  infer _Success,
-  infer _Error,
-  infer _M,
-  infer _MR
-> ? HttpApiEndpoint<
-    _Name,
+    _Identifier,
     _Method,
     _Path,
     _Params,
@@ -781,34 +783,48 @@ const Proto = {
   pipe() {
     return pipeArguments(this, arguments)
   },
-  prefix(this: AnyWithProps, prefix: HttpRouter.PathInput) {
+  prefix(this: Top, prefix: HttpRouter.PathInput) {
     return makeProto({
-      ...this,
+      ...optionsFromEndpoint(this),
       path: HttpRouter.prefixPath(this.path, prefix)
     })
   },
-  middleware(this: AnyWithProps, middleware: HttpApiMiddleware.AnyService) {
+  middleware(this: Top, middleware: HttpApiMiddleware.AnyService) {
     return makeProto({
-      ...this,
+      ...optionsFromEndpoint(this),
       middlewares: new Set([...this.middlewares, middleware as any])
     })
   },
-  annotate(this: AnyWithProps, key: ServiceMap.Key<any, any>, value: any) {
+  annotate(this: Top, key: Context.Key<any, any>, value: any) {
     return makeProto({
-      ...this,
-      annotations: ServiceMap.add(this.annotations, key, value)
+      ...optionsFromEndpoint(this),
+      annotations: Context.add(this.annotations, key, value)
     })
   },
-  annotateMerge(this: AnyWithProps, annotations: ServiceMap.ServiceMap<any>) {
+  annotateMerge(this: Top, annotations: Context.Context<any>) {
     return makeProto({
-      ...this,
-      annotations: ServiceMap.merge(this.annotations, annotations)
+      ...optionsFromEndpoint(this),
+      annotations: Context.merge(this.annotations, annotations)
     })
   }
 }
 
+const optionsFromEndpoint = (endpoint: Top) => ({
+  identifier: endpoint.identifier,
+  path: endpoint.path,
+  method: endpoint.method,
+  params: endpoint.params,
+  query: endpoint.query,
+  headers: endpoint.headers,
+  payload: endpoint.payload,
+  success: endpoint.success,
+  error: endpoint.error,
+  annotations: endpoint.annotations,
+  middlewares: endpoint.middlewares
+})
+
 function makeProto<
-  Name extends string,
+  Identifier extends string,
   Method extends HttpMethod,
   const Path extends string,
   Params extends Schema.Top,
@@ -820,7 +836,7 @@ function makeProto<
   Middleware,
   MiddlewareR
 >(options: {
-  readonly name: Name
+  readonly identifier: Identifier
   readonly path: Path
   readonly method: Method
   readonly params: Schema.Top | undefined
@@ -829,10 +845,10 @@ function makeProto<
   readonly payload: PayloadMap
   readonly success: ReadonlySet<Schema.Top>
   readonly error: ReadonlySet<Schema.Top>
-  readonly annotations: ServiceMap.ServiceMap<never>
-  readonly middlewares: ReadonlySet<ServiceMap.Key<Middleware, any>>
+  readonly annotations: Context.Context<never>
+  readonly middlewares: ReadonlySet<Context.Key<Middleware, any>>
 }): HttpApiEndpoint<
-  Name,
+  Identifier,
   Method,
   Path,
   Params,
@@ -844,32 +860,43 @@ function makeProto<
   Middleware,
   MiddlewareR
 > {
-  return Object.assign(Object.create(Proto), options)
+  function HttpApiEndpoint() {}
+  Object.setPrototypeOf(HttpApiEndpoint, Proto)
+  return Object.assign(HttpApiEndpoint, options) as any
 }
 
 /**
- * @since 4.0.0
+ * Constraint for path parameter schemas: each parameter must encode to
+ * `string | undefined`, or the schema must encode to a record of those values.
+ *
  * @category constraints
+ * @since 4.0.0
  */
 export type ParamsConstraint =
   | Record<string, Schema.Encoder<string | undefined, unknown>>
   | Schema.Encoder<Record<string, string | undefined>, unknown>
 
 /**
- * @since 4.0.0
+ * Constraint for header schemas: each header must encode to `string | undefined`,
+ * or the schema must encode to a record of those values.
+ *
  * @category constraints
+ * @since 4.0.0
  */
 export type HeadersConstraint =
   | Record<string, Schema.Encoder<string | undefined, unknown>>
   | Schema.Encoder<Record<string, string | undefined>, unknown>
 
 /**
- * @since 4.0.0
+ * Constraint for query schemas: each field must encode to `string`, an array of
+ * strings, or `undefined`, or the schema must encode to a record of those values.
+ *
  * @category constraints
+ * @since 4.0.0
  */
 export type QueryConstraint =
   | Record<string, Schema.Encoder<string | ReadonlyArray<string> | undefined, unknown>>
-  | Schema.Encoder<Record<string, string | ReadonlyArray<string> | undefined>, unknown>
+  | Schema.Encoder<string | ReadonlyArray<string> | undefined, unknown>
 
 /**
  * Payload schema depends on the HTTP method:
@@ -879,34 +906,130 @@ export type QueryConstraint =
  * - for body methods, payload may be any `Schema.Top` (or content-type keyed
  *   schemas) and OpenAPI uses `requestBody` instead of `parameters`
  *
- * @since 4.0.0
  * @category constraints
+ * @since 4.0.0
  */
 export type PayloadConstraint<Method extends HttpMethod> = Method extends HttpMethod.NoBody ? Record<
     string,
     Schema.Encoder<string | ReadonlyArray<string> | undefined, unknown>
   > :
-  SuccessConstraint
+  Schema.Top | ReadonlyArray<Schema.Top>
 
 /**
- * @since 4.0.0
+ * Payload constraint used when automatic codecs are enabled: no-body methods
+ * accept field records for query-style encoding, while body methods accept one or
+ * more schemas.
+ *
  * @category constraints
+ * @since 4.0.0
+ */
+export type PayloadConstraintCodecs<Method extends HttpMethod> = Method extends HttpMethod.NoBody ?
+  Record<string, Schema.Top> :
+  Schema.Top | ReadonlyArray<Schema.Top>
+
+/**
+ * Constraint for success response schemas, allowing either a single schema or a
+ * readonly array of schemas.
+ *
+ * @category constraints
+ * @since 4.0.0
  */
 export type SuccessConstraint = Schema.Top | ReadonlyArray<Schema.Top>
 
 /**
- * @since 4.0.0
+ * Constraint for error response schemas, allowing either a single schema or a
+ * readonly array of schemas.
+ *
  * @category constraints
+ * @since 4.0.0
  */
 export type ErrorConstraint = Schema.Top | ReadonlyArray<Schema.Top>
 
+type ErrorNoStream<S extends ErrorConstraint> = [
+  Extract<
+    S extends ReadonlyArray<Schema.Constraint> ? S[number] : S,
+    HttpApiSchema.StreamSchema
+  >
+] extends [never] ? S : never
+
 /**
- * @since 4.0.0
+ * Creates endpoint constructors for a specific HTTP method. The resulting
+ * constructor builds an `HttpApiEndpoint` from an identifier, path, and optional request
+ * and response schemas, applying automatic JSON or string-tree codecs unless
+ * `disableCodecs` is enabled.
+ *
  * @category constructors
+ * @since 4.0.0
  */
-export const make = <Method extends HttpMethod>(method: Method) =>
+export const make = <Method extends HttpMethod>(method: Method): {
+  <
+    const Identifier extends string,
+    const Path extends HttpRouter.PathInput,
+    Params extends Schema.Top | Schema.Struct.Fields = never,
+    Query extends Schema.Top | Schema.Struct.Fields = never,
+    Payload extends PayloadConstraintCodecs<Method> = never,
+    Headers extends Schema.Top | Schema.Struct.Fields = never,
+    const Success extends SuccessConstraint = HttpApiSchema.NoContent,
+    const Error extends Schema.Top | ReadonlyArray<Schema.Top> = never
+  >(
+    identifier: Identifier,
+    path: Path,
+    options?: {
+      readonly disableCodecs?: false | undefined
+      readonly params?: Params | undefined
+      readonly query?: Query | undefined
+      readonly headers?: Headers | undefined
+      readonly payload?: Payload | undefined
+      readonly success?: Success | undefined
+      readonly error?: (Error & ErrorNoStream<Types.NoInfer<Error>>) | undefined
+    }
+  ): HttpApiEndpoint<
+    Identifier,
+    Method,
+    Path,
+    ToStringTreeCodec<Params>,
+    ToStringTreeCodec<Query>,
+    Method extends HttpMethod.WithBody ? ToJsonCodec<ToSchema<Payload>>
+      : ToStringTreeCodec<ToSchema<Payload>>,
+    ToStringTreeCodec<Headers>,
+    ToSuccessCodec<Success>,
+    ToJsonCodec<Error extends ReadonlyArray<Schema.Constraint> ? Error[number] : Error>
+  >
+  <
+    const Identifier extends string,
+    const Path extends HttpRouter.PathInput,
+    Params extends ParamsConstraint = never,
+    Query extends QueryConstraint = never,
+    Payload extends PayloadConstraint<Method> = never,
+    Headers extends HeadersConstraint = never,
+    const Success extends SuccessConstraint = HttpApiSchema.NoContent,
+    const Error extends ErrorConstraint = never
+  >(
+    identifier: Identifier,
+    path: Path,
+    options?: {
+      readonly disableCodecs: true
+      readonly params?: Params | undefined
+      readonly query?: Query | undefined
+      readonly headers?: Headers | undefined
+      readonly payload?: Payload | undefined
+      readonly success?: Success | undefined
+      readonly error?: (Error & ErrorNoStream<Types.NoInfer<Error>>) | undefined
+    }
+  ): HttpApiEndpoint<
+    Identifier,
+    Method,
+    Path,
+    Params extends Schema.Struct.Fields ? Schema.Struct<Params> : Params,
+    Query extends Schema.Struct.Fields ? Schema.Struct<Query> : Query,
+    ToSchema<Payload>,
+    ToSchema<Headers>,
+    UnwrapReadonlyArray<Success>,
+    Error extends ReadonlyArray<Schema.Constraint> ? Error[number] : Error
+  >
+} =>
 <
-  const Name extends string,
+  const Identifier extends string,
   const Path extends HttpRouter.PathInput,
   Params extends ParamsConstraint = never,
   Query extends QueryConstraint = never,
@@ -915,77 +1038,82 @@ export const make = <Method extends HttpMethod>(method: Method) =>
   const Success extends SuccessConstraint = HttpApiSchema.NoContent,
   const Error extends ErrorConstraint = never
 >(
-  name: Name,
+  identifier: Identifier,
   path: Path,
   options?: {
+    readonly disableCodecs?: boolean | undefined
     readonly params?: Params | undefined
     readonly query?: Query | undefined
     readonly headers?: Headers | undefined
     readonly payload?: Payload | undefined
     readonly success?: Success | undefined
-    readonly error?: Error | undefined
+    readonly error?: (Error & ErrorNoStream<Types.NoInfer<Error>>) | undefined
   }
 ): HttpApiEndpoint<
-  Name,
+  Identifier,
   Method,
   Path,
   Params extends Schema.Struct.Fields ? Schema.Struct<Params> : Params,
   Query extends Schema.Struct.Fields ? Schema.Struct<Query> : Query,
   Payload extends Schema.Struct.Fields ? Schema.Struct<Payload>
-    : Payload extends ReadonlyArray<Schema.Top> ? Payload[number]
+    : Payload extends ReadonlyArray<Schema.Constraint> ? Payload[number]
     : Payload,
   Headers extends Schema.Struct.Fields ? Schema.Struct<Headers> : Headers,
-  Success extends ReadonlyArray<Schema.Top> ? Success[number] : Success,
-  (Error extends ReadonlyArray<Schema.Top> ? Error[number] : Error) | typeof BadRequestNoContent
+  UnwrapReadonlyArray<Success>,
+  Error extends ReadonlyArray<Schema.Constraint> ? Error[number] : Error
 > => {
+  const disableCodecs = options?.disableCodecs ?? false
+  const transformStringTree = disableCodecs ? identity : Schema.toCodecStringTree
   return makeProto({
-    name,
+    identifier,
     path,
     method,
-    params: getParams(options?.params),
-    query: getQuery(options?.query),
-    headers: getHeaders(options?.headers),
-    payload: getPayload(options?.payload),
-    success: getSuccess(options?.success),
-    error: getError(options?.error),
-    annotations: ServiceMap.empty(),
+    params: ensureStruct(options?.params, transformStringTree),
+    query: ensureStruct(options?.query, transformStringTree),
+    headers: ensureStruct(options?.headers, transformStringTree),
+    payload: getPayload(options?.payload, method, disableCodecs),
+    success: getSuccessResponse(options?.success, method, disableCodecs),
+    error: getErrorResponse(options?.error, disableCodecs),
+    annotations: Context.empty(),
     middlewares: new Set()
   })
 }
 
-function getParams(params: ParamsConstraint | undefined): Schema.Top | undefined {
+type ToSchema<S extends Schema.Struct.Fields | Schema.Constraint | ReadonlyArray<Schema.Constraint>> = S extends
+  Schema.Struct.Fields ? Schema.Struct<S>
+  : S extends ReadonlyArray<Schema.Constraint> ? S[number]
+  : S
+
+function ensureStruct(
+  params: Schema.Struct.Fields | Schema.Top | undefined,
+  transform: (schema: Schema.Top) => Schema.Top
+): Schema.Top | undefined {
   if (params === undefined) return undefined
-  if (Schema.isSchema(params)) return params
-  return Schema.Struct(params)
-}
-
-function getQuery(query: QueryConstraint | undefined): Schema.Top | undefined {
-  if (query === undefined) return undefined
-  if (Schema.isSchema(query)) return query
-  return Schema.Struct(query)
-}
-
-// all keys should be lowercase
-function getHeaders(headers: HeadersConstraint | undefined): Schema.Top | undefined {
-  if (headers === undefined) return undefined
-  if (Schema.isSchema(headers)) return headers
-  return Schema.Struct(headers)
+  if (Schema.isSchema(params)) return transform(params)
+  return transform(Schema.Struct(params))
 }
 
 function getPayload(
-  payload: Schema.Top | ReadonlyArray<Schema.Top> | Schema.Struct.Fields | undefined
+  payload: Schema.Constraint | ReadonlyArray<Schema.Constraint> | Schema.Struct.Fields | undefined,
+  method: HttpMethod,
+  disableCodecs: boolean
 ): PayloadMap {
-  const result: Map<string, { encoding: HttpApiSchema.PayloadEncoding; schemas: [Schema.Top, ...Array<Schema.Top>] }> =
-    new Map()
+  const result: Map<
+    string,
+    { encoding: HttpApiSchema.PayloadEncoding; schemas: [Schema.Top, ...Array<Schema.Top>] }
+  > = new Map()
   if (payload === undefined) return result
   const schemas: Array<Schema.Top> = Array.isArray(payload)
     ? payload
     : Schema.isSchema(payload)
     ? [payload]
-    : [Schema.Struct(payload as any).pipe(HttpApiSchema.asFormUrlEncoded())]
+    : [(Schema.Struct(payload as any)).pipe(HttpApiSchema.asFormUrlEncoded())]
+  const transform = disableCodecs ? identity : transformPayload
+
   for (const schema of schemas) {
-    const encoding = HttpApiSchema.getPayloadEncoding(schema.ast)
-    const existing = result.get(encoding.contentType)
+    const encoding = HttpApiSchema.getPayloadEncoding(schema.ast, method)
+    const contentType = MediaType.normalize(encoding.contentType)
+    const existing = result.get(contentType)
     if (existing) {
       if (existing.encoding._tag !== encoding._tag) {
         throw new Error(`Multiple payload encodings for content-type: ${encoding.contentType}`)
@@ -993,47 +1121,214 @@ function getPayload(
       if (existing.encoding._tag === "Multipart") {
         throw new Error(`Multiple multipart payloads for content-type: ${encoding.contentType}`)
       }
-      existing.schemas.push(schema)
+      existing.schemas.push(transform(schema, method))
     } else {
-      result.set(encoding.contentType, { encoding, schemas: [schema] })
+      result.set(contentType, { encoding, schemas: [transform(schema, method)] })
     }
   }
   return result
 }
 
-function getSuccess(
-  success: Schema.Top | ReadonlyArray<Schema.Top> | undefined
+const reservedStreamFailureEvent = "effect/httpapi/stream/failure"
+
+function getSuccessResponse(
+  success: Schema.Top | ReadonlyArray<Schema.Top> | undefined,
+  method: HttpMethod,
+  disableCodecs: boolean
 ): Set<Schema.Top> {
   if (success === undefined) return new Set()
-  return new Set(Array.isArray(success) ? success : [success])
+  const schemas = Arr.ensure(success)
+  validateSuccessResponse(schemas, method)
+  return new Set(
+    disableCodecs ?
+      schemas :
+      schemas.map((schema) => HttpApiSchema.isStreamSchema(schema) ? schema : transformResponse(schema))
+  )
 }
 
-function getError(error: Schema.Top | ReadonlyArray<Schema.Top> | undefined): Set<Schema.Top> {
+function getErrorResponse(
+  error: Schema.Top | ReadonlyArray<Schema.Top> | undefined,
+  disableCodecs: boolean
+): Set<Schema.Top> {
   if (error === undefined) return new Set()
-  return new Set(Array.isArray(error) ? error : [error])
+  const schemas = Arr.ensure(error)
+  for (const schema of schemas) {
+    if (HttpApiSchema.isStreamSchema(schema)) {
+      throw new Error("Streaming schemas are not supported in error responses")
+    }
+  }
+  return new Set(disableCodecs ? schemas : schemas.map(transformResponse))
+}
+
+function validateSuccessResponse(schemas: ReadonlyArray<Schema.Constraint>, method: HttpMethod) {
+  const statuses = new Map<number, {
+    readonly stream?: HttpApiSchema.StreamSchema | undefined
+    bufferedContentTypes: Set<string>
+    noContent: boolean
+  }>()
+
+  for (const schema of schemas) {
+    if (HttpApiSchema.isStreamSchema(schema)) {
+      validateStreamSuccess(schema, method)
+      const status = HttpApiSchema.getStatusStream(schema)
+      const entry = getStatusEntry(statuses, status)
+      if (entry.stream !== undefined) {
+        throw new Error(`Multiple streaming success responses for status: ${status}`)
+      }
+      if (entry.noContent) {
+        throw new Error(`Cannot combine no-content and streaming success responses for status: ${status}`)
+      }
+      if (entry.bufferedContentTypes.has(MediaType.normalize(schema.contentType))) {
+        throw new Error(
+          `Cannot combine buffered and streaming success responses for status ${status} and content-type: ${schema.contentType}`
+        )
+      }
+      statuses.set(status, { ...entry, stream: schema })
+    } else {
+      const status = HttpApiSchema.getStatusSuccess(schema.ast)
+      const entry = getStatusEntry(statuses, status)
+      const noContent = HttpApiSchema.isNoContent(schema.ast)
+      if (entry.stream !== undefined) {
+        if (noContent) {
+          throw new Error(`Cannot combine no-content and streaming success responses for status: ${status}`)
+        }
+        const encoding = HttpApiSchema.getResponseEncoding(schema.ast)
+        if (
+          MediaType.normalize(encoding.contentType) === MediaType.normalize(entry.stream.contentType)
+        ) {
+          throw new Error(
+            `Cannot combine buffered and streaming success responses for status ${status} and content-type: ${encoding.contentType}`
+          )
+        }
+      }
+      if (!noContent) {
+        entry.bufferedContentTypes.add(
+          MediaType.normalize(HttpApiSchema.getResponseEncoding(schema.ast).contentType)
+        )
+      }
+      entry.noContent = entry.noContent || noContent
+    }
+  }
+}
+
+function getStatusEntry(
+  statuses: Map<number, {
+    readonly stream?: HttpApiSchema.StreamSchema | undefined
+    bufferedContentTypes: Set<string>
+    noContent: boolean
+  }>,
+  status: number
+) {
+  let entry = statuses.get(status)
+  if (entry === undefined) {
+    entry = { bufferedContentTypes: new Set(), noContent: false }
+    statuses.set(status, entry)
+  }
+  return entry
+}
+
+function validateStreamSuccess(schema: HttpApiSchema.StreamSchema, method: HttpMethod) {
+  if (method === "HEAD") {
+    throw new Error("HEAD endpoints cannot declare streaming success responses")
+  }
+  if (HttpApiSchema.isStreamSse(schema) && hasReservedSseEventName(schema.events.ast)) {
+    throw new Error(`SSE event name is reserved: ${reservedStreamFailureEvent}`)
+  }
+}
+
+function hasReservedSseEventName(ast: AST.AST): boolean {
+  return hasReservedEventName(AST.toEncoded(ast), new Set())
+}
+
+function hasReservedEventName(ast: AST.AST, seen: Set<AST.AST>): boolean {
+  if (seen.has(ast)) return false
+  seen.add(ast)
+  if (AST.isUnion(ast)) {
+    return ast.types.some((type) => hasReservedEventName(type, seen))
+  }
+  if (AST.isSuspend(ast)) {
+    return hasReservedEventName(ast.thunk(), seen)
+  }
+  if (!AST.isObjects(ast)) return false
+  const event = ast.propertySignatures.find((ps) => ps.name === "event")
+  return event !== undefined && hasReservedEventLiteral(event.type, seen)
+}
+
+function hasReservedEventLiteral(ast: AST.AST, seen: Set<AST.AST>): boolean {
+  if (seen.has(ast)) return false
+  seen.add(ast)
+  const encoded = AST.toEncoded(ast)
+  if (encoded !== ast) {
+    return hasReservedEventLiteral(encoded, seen)
+  }
+  if (AST.isLiteral(ast)) {
+    return ast.literal === reservedStreamFailureEvent
+  }
+  if (AST.isUnion(ast)) {
+    return ast.types.some((type) => hasReservedEventLiteral(type, seen))
+  }
+  if (AST.isSuspend(ast)) {
+    return hasReservedEventLiteral(ast.thunk(), seen)
+  }
+  return false
+}
+
+function transformResponse(schema: Schema.Top): Schema.Top {
+  const encoding = HttpApiSchema.getResponseEncoding(schema.ast)
+  switch (encoding._tag) {
+    case "Json":
+      return Schema.toCodecJson(schema)
+    case "FormUrlEncoded":
+      return Schema.toCodecStringTree(schema)
+    case "Text":
+    case "Uint8Array":
+      return schema
+  }
+}
+
+function transformPayload(schema: Schema.Top, method: HttpMethod): Schema.Top {
+  const encoding = HttpApiSchema.getPayloadEncoding(schema.ast, method)
+  switch (encoding._tag) {
+    case "Json":
+      return Schema.toCodecJson(schema)
+    case "FormUrlEncoded":
+      return Schema.toCodecStringTree(schema)
+    case "Text":
+    case "Uint8Array":
+    case "Multipart":
+      return schema
+  }
 }
 
 /**
- * @since 4.0.0
+ * Creates a `GET` endpoint declaration.
+ *
  * @category constructors
+ * @since 4.0.0
  */
 export const get = make("GET")
 
 /**
- * @since 4.0.0
+ * Creates a `POST` endpoint declaration.
+ *
  * @category constructors
+ * @since 4.0.0
  */
 export const post = make("POST")
 
 /**
- * @since 4.0.0
+ * Creates a `PUT` endpoint declaration.
+ *
  * @category constructors
+ * @since 4.0.0
  */
 export const put = make("PUT")
 
 /**
- * @since 4.0.0
+ * Creates a `PATCH` endpoint declaration.
+ *
  * @category constructors
+ * @since 4.0.0
  */
 export const patch = make("PATCH")
 
@@ -1041,20 +1336,26 @@ const del = make("DELETE")
 
 export {
   /**
-   * @since 4.0.0
+   * Creates a `DELETE` endpoint declaration.
+   *
    * @category constructors
+   * @since 4.0.0
    */
   del as delete
 }
 
 /**
- * @since 4.0.0
+ * Creates a `HEAD` endpoint declaration.
+ *
  * @category constructors
+ * @since 4.0.0
  */
 export const head = make("HEAD")
 
 /**
- * @since 4.0.0
+ * Creates an `OPTIONS` endpoint declaration.
+ *
  * @category constructors
+ * @since 4.0.0
  */
 export const options = make("OPTIONS")

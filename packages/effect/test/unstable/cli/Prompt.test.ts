@@ -1,5 +1,5 @@
 import { assert, describe, it } from "@effect/vitest"
-import { Effect, FileSystem, Layer, Path, Redacted } from "effect"
+import { Data, Effect, Fiber, FileSystem, Layer, Match, Path, Queue, Redacted } from "effect"
 import { TestConsole } from "effect/testing"
 import { Prompt } from "effect/unstable/cli"
 import * as MockTerminal from "./services/MockTerminal.ts"
@@ -15,6 +15,7 @@ const TestLayer = Layer.mergeAll(
   PathLayer,
   TerminalLayer
 )
+const Action = Data.taggedEnum<Prompt.ActionDefinition>()
 
 const escape = String.fromCharCode(27)
 const bell = String.fromCharCode(7)
@@ -44,7 +45,47 @@ const toFrames = (lines: ReadonlyArray<unknown>) =>
     .map((line) => stripAnsi(String(line)))
     .filter((line) => line.split(bell).join("").trim().length > 0)
 
+const toRawFrames = (lines: ReadonlyArray<unknown>) =>
+  lines
+    .map((line) => String(line))
+    .filter((line) => stripAnsi(line).split(bell).join("").trim().length > 0)
+
 const findFrame = (frames: ReadonlyArray<string>, text: string) => frames.find((frame) => frame.includes(text))
+
+describe("Prompt.integer", () => {
+  it.effect("submits the default value", () =>
+    Effect.gen(function*() {
+      const prompt = Prompt.integer({ message: "Count", default: 42 })
+
+      yield* MockTerminal.inputKey("enter")
+
+      const result = yield* Prompt.run(prompt)
+      assert.strictEqual(result, 42)
+    }).pipe(Effect.provide(TestLayer)))
+
+  it.effect("starts from the default value so it can be edited", () =>
+    Effect.gen(function*() {
+      const prompt = Prompt.integer({ message: "Count", default: 4 })
+
+      yield* MockTerminal.inputText("2")
+      yield* MockTerminal.inputKey("enter")
+
+      const result = yield* Prompt.run(prompt)
+      assert.strictEqual(result, 42)
+    }).pipe(Effect.provide(TestLayer)))
+
+  it.effect("clears the default value on ctrl-u", () =>
+    Effect.gen(function*() {
+      const prompt = Prompt.integer({ message: "Count", default: 42 })
+
+      yield* MockTerminal.inputKey("u", { ctrl: true })
+      yield* MockTerminal.inputText("7")
+      yield* MockTerminal.inputKey("enter")
+
+      const result = yield* Prompt.run(prompt)
+      assert.strictEqual(result, 7)
+    }).pipe(Effect.provide(TestLayer)))
+})
 
 describe("Prompt.float", () => {
   it.effect("renders appended input without literal parsed", () =>
@@ -108,6 +149,54 @@ describe("Prompt.text", () => {
 
       const result = yield* Prompt.run(prompt)
       assert.strictEqual(result, "John")
+    }).pipe(Effect.provide(TestLayer)))
+
+  it.effect("moves the cursor to the beginning on ctrl-a", () =>
+    Effect.gen(function*() {
+      const prompt = Prompt.text({
+        message: "Name",
+        default: "Jane"
+      })
+
+      yield* MockTerminal.inputText(" Doe")
+      yield* MockTerminal.inputKey("a", { ctrl: true })
+      yield* MockTerminal.inputText("Dr. ")
+      yield* MockTerminal.inputKey("enter")
+
+      const result = yield* Prompt.run(prompt)
+      assert.strictEqual(result, "Dr. Jane Doe")
+    }).pipe(Effect.provide(TestLayer)))
+
+  it.effect("moves the cursor to the end on ctrl-e", () =>
+    Effect.gen(function*() {
+      const prompt = Prompt.text({
+        message: "Name"
+      })
+
+      yield* MockTerminal.inputText("Jane")
+      yield* MockTerminal.inputKey("left")
+      yield* MockTerminal.inputKey("left")
+      yield* MockTerminal.inputKey("e", { ctrl: true })
+      yield* MockTerminal.inputText(" Doe")
+      yield* MockTerminal.inputKey("enter")
+
+      const result = yield* Prompt.run(prompt)
+      assert.strictEqual(result, "Jane Doe")
+    }).pipe(Effect.provide(TestLayer)))
+
+  it.effect("does not insert characters for unsupported ctrl key combinations", () =>
+    Effect.gen(function*() {
+      const prompt = Prompt.text({
+        message: "Name"
+      })
+
+      yield* MockTerminal.inputText("Ja")
+      yield* MockTerminal.inputKey("l", { ctrl: true })
+      yield* MockTerminal.inputText("ne")
+      yield* MockTerminal.inputKey("enter")
+
+      const result = yield* Prompt.run(prompt)
+      assert.strictEqual(result, "Jane")
     }).pipe(Effect.provide(TestLayer)))
 
   it.effect("does not render or submit the cleared default value", () =>
@@ -310,5 +399,231 @@ describe("Prompt.autoComplete", () => {
       const frames = toFrames(output)
 
       assert.isTrue(findFrame(frames, "No matches") !== undefined)
+    }).pipe(Effect.provide(TestLayer)))
+})
+
+describe("Prompt.file", () => {
+  const FilePromptLayer = Layer.mergeAll(
+    ConsoleLayer,
+    FileSystem.layerNoop({
+      exists: () => Effect.succeed(true),
+      readDirectory: (directory) =>
+        Effect.succeed(
+          directory === "/workspace"
+            ? ["alpha.txt", "banana.txt", "basket.txt"]
+            : []
+        ),
+      stat: (path) =>
+        Effect.succeed(
+          path.endsWith(".txt")
+            ? ({ type: "File" } as any)
+            : ({ type: "Directory" } as any)
+        )
+    }),
+    PathLayer,
+    TerminalLayer
+  )
+
+  it.effect("starts from the default value so it can be submitted", () =>
+    Effect.gen(function*() {
+      const prompt = Prompt.file({
+        message: "Pick file",
+        default: "/workspace/banana.txt"
+      })
+
+      yield* MockTerminal.inputKey("enter")
+
+      const result = yield* Prompt.run(prompt)
+      assert.strictEqual(result, "/workspace/banana.txt")
+    }).pipe(Effect.provide(FilePromptLayer)))
+
+  it.effect("filters files as you type", () =>
+    Effect.gen(function*() {
+      const prompt = Prompt.file({
+        message: "Pick file",
+        startingPath: "/workspace"
+      })
+
+      yield* MockTerminal.inputText("ban")
+      yield* MockTerminal.inputKey("enter")
+
+      const result = yield* Prompt.run(prompt)
+      assert.strictEqual(result, "/workspace/banana.txt")
+
+      const output = yield* TestConsole.logLines
+      const frames = toFrames(output)
+      const filteredFrame = findFrame(frames, "[filter: ban]")
+
+      assert.isTrue(filteredFrame !== undefined)
+      assert.isTrue(filteredFrame?.includes("banana.txt"))
+      assert.isFalse(filteredFrame?.includes("alpha.txt"))
+      assert.isFalse(filteredFrame?.includes("basket.txt"))
+    }).pipe(Effect.provide(FilePromptLayer)))
+
+  it.effect("removes the last character on backspace", () =>
+    Effect.gen(function*() {
+      const prompt = Prompt.file({
+        message: "Pick file",
+        startingPath: "/workspace"
+      })
+
+      yield* MockTerminal.inputText("ban")
+      yield* MockTerminal.inputKey("backspace")
+      yield* MockTerminal.inputKey("enter")
+
+      const result = yield* Prompt.run(prompt)
+      assert.strictEqual(result, "/workspace/banana.txt")
+
+      const output = yield* TestConsole.logLines
+      const frames = toFrames(output)
+      const narrowedFrame = findFrame(frames, "[filter: ban]")
+      const expandedFrame = findFrame(frames, "[filter: ba]")
+
+      assert.isTrue(narrowedFrame !== undefined)
+      assert.isTrue(expandedFrame !== undefined)
+      assert.isFalse(narrowedFrame?.includes("basket.txt"))
+      assert.isTrue(expandedFrame?.includes("basket.txt"))
+    }).pipe(Effect.provide(FilePromptLayer)))
+})
+
+describe("Prompt.multiSelect", () => {
+  it.effect("underlines the active label", () =>
+    Effect.gen(function*() {
+      const prompt = Prompt.multiSelect({
+        message: "Pick items",
+        choices: [
+          { title: "Alpha", value: "alpha" },
+          { title: "Beta", value: "beta" },
+          { title: "Gamma", value: "gamma" }
+        ]
+      })
+
+      const fiber = yield* Prompt.run(prompt).pipe(Effect.forkChild)
+
+      yield* Effect.yieldNow
+      yield* MockTerminal.inputKey("down")
+      yield* MockTerminal.inputKey("down")
+      yield* MockTerminal.inputKey("down")
+      yield* Effect.yieldNow
+
+      const output = yield* TestConsole.logLines
+      const frames = toRawFrames(output)
+      const highlightedFrame = [...frames].reverse().find((frame) => frame.includes("Beta"))
+
+      assert.isTrue(highlightedFrame !== undefined)
+      assert.isTrue(highlightedFrame?.includes(`${escape}[4m${escape}[96mBeta${escape}[0m`))
+
+      yield* MockTerminal.inputKey("enter")
+
+      const result = yield* Fiber.join(fiber)
+      assert.deepStrictEqual(result, [])
+    }).pipe(Effect.provide(TestLayer)))
+})
+
+describe("Prompt.custom", () => {
+  it.effect("receive handles events from external dequeue", () =>
+    Effect.gen(function*() {
+      const eventQueue = yield* Queue.make<string>()
+
+      const prompt = Prompt.custom(
+        { count: 0 },
+        Queue.asDequeue(eventQueue),
+        {
+          render: (state) => Effect.succeed(`Count: ${state.count}`),
+          process: (input, state) =>
+            Match.value(input).pipe(
+              Match.tag("Input", () => Effect.succeed(Action.Submit({ value: state.count }))),
+              Match.tag("Event", ({ value }) =>
+                Effect.succeed(
+                  Action.NextFrame({ state: { count: state.count + (value === "tick" ? 1 : 0) } })
+                )),
+              Match.exhaustive
+            ),
+          clear: () => Effect.succeed("")
+        }
+      )
+
+      const fiber = yield* Prompt.run(prompt).pipe(Effect.forkChild)
+
+      // Give the prompt loop time to start and block on the race
+      yield* Effect.yieldNow
+
+      // Push two events
+      yield* Queue.offer(eventQueue, "tick")
+      yield* Effect.yieldNow
+      yield* Queue.offer(eventQueue, "tock")
+      yield* Effect.yieldNow
+      yield* Queue.offer(eventQueue, "tick")
+      yield* Effect.yieldNow
+
+      // Submit via keypress
+      yield* MockTerminal.inputKey("enter")
+
+      const result = yield* Fiber.join(fiber)
+      assert.strictEqual(result, 2)
+    }).pipe(Effect.provide(TestLayer)))
+
+  it.effect("falls back to process when no events are pending", () =>
+    Effect.gen(function*() {
+      const eventQueue = yield* Queue.make<string>()
+
+      const prompt = Prompt.custom(
+        { keys: 0 },
+        Queue.asDequeue(eventQueue),
+        {
+          render: (state) => Effect.succeed(`Keys: ${state.keys}`),
+          process: (input, state) =>
+            Match.value(input).pipe(
+              Match.tag("Input", () => {
+                const next = state.keys + 1
+                return next >= 3
+                  ? Effect.succeed(Action.Submit({ value: next }))
+                  : Effect.succeed(Action.NextFrame({ state: { keys: next } }))
+              }),
+              Match.tag("Event", () => Effect.succeed(Action.NextFrame({ state }))),
+              Match.exhaustive
+            ),
+          clear: () => Effect.succeed("")
+        }
+      )
+
+      yield* MockTerminal.inputKey("a")
+      yield* MockTerminal.inputKey("b")
+      yield* MockTerminal.inputKey("c")
+
+      const result = yield* Prompt.run(prompt)
+      assert.strictEqual(result, 3)
+    }).pipe(Effect.provide(TestLayer)))
+
+  it.effect("Input variant exposes the input field with UserInput", () =>
+    Effect.gen(function*() {
+      const eventQueue = yield* Queue.make<string>()
+
+      const prompt = Prompt.custom(
+        { captured: "" },
+        Queue.asDequeue(eventQueue),
+        {
+          render: (state) => Effect.succeed(`Captured: ${state.captured}`),
+          process: (input, state) =>
+            Match.value(input).pipe(
+              Match.tag("Input", ({ input: userInput }) => {
+                const key = userInput.key.name
+                return key === "enter"
+                  ? Effect.succeed(Action.Submit({ value: state.captured }))
+                  : Effect.succeed(Action.NextFrame({ state: { captured: state.captured + key } }))
+              }),
+              Match.tag("Event", () => Effect.succeed(Action.NextFrame({ state }))),
+              Match.exhaustive
+            ),
+          clear: () => Effect.succeed("")
+        }
+      )
+
+      yield* MockTerminal.inputKey("x")
+      yield* MockTerminal.inputKey("y")
+      yield* MockTerminal.inputKey("enter")
+
+      const result = yield* Prompt.run(prompt)
+      assert.strictEqual(result, "xy")
     }).pipe(Effect.provide(TestLayer)))
 })

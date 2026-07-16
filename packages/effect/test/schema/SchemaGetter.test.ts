@@ -1,4 +1,5 @@
-import { Effect, Option, Result, SchemaGetter } from "effect"
+import { assert } from "@effect/vitest"
+import { DateTime, Effect, Option, Result, SchemaGetter } from "effect"
 import { describe, it } from "vitest"
 import { assertSome, deepStrictEqual } from "../utils/assert.ts"
 
@@ -19,6 +20,36 @@ describe("SchemaGetter", () => {
     const getter = SchemaGetter.succeed(1).map((t) => t + 1)
     const result = Effect.runSync(getter.run(Option.some(1), {}))
     assertSome(result, 2)
+  })
+
+  it("dateTimeUtcFromInput", async () => {
+    const decoding = makeAsserts(SchemaGetter.dateTimeUtcFromInput<string>())
+    await decoding("2024-01-01 01:00:00", DateTime.makeUnsafe("2024-01-01T01:00:00.000Z"))
+    await decoding("2020-02-01T11:17:00+1100", DateTime.makeUnsafe("2020-02-01T00:17:00.000Z"))
+    // should support strings with explicit GMT zone
+    await decoding("Tue, 27 Jan 2026 17:14:06 GMT", DateTime.makeUnsafe("2026-01-27T17:14:06.000Z"))
+  })
+
+  describe("makeTreeRecord", () => {
+    it("reinitializes own undefined values before descending", () => {
+      deepStrictEqual(
+        SchemaGetter.makeTreeRecord([
+          ["a", undefined],
+          ["a[b]", 1]
+        ]),
+        { a: { b: 1 } }
+      )
+    })
+
+    it("reinitializes own undefined values at numeric indexes", () => {
+      deepStrictEqual(
+        SchemaGetter.makeTreeRecord([
+          ["a[0]", undefined],
+          ["a[0][b]", 1]
+        ]),
+        { a: [{ b: 1 }] }
+      )
+    })
   })
 
   describe("decodeFormData / encodeFormData", () => {
@@ -215,6 +246,23 @@ describe("SchemaGetter", () => {
       }
       await decoding(formData, object)
     })
+
+    it("stores __proto__ paths as own properties", async () => {
+      const pollutedKey = "__effectSchemaPolluted"
+      Reflect.deleteProperty(Object.prototype, pollutedKey)
+      try {
+        const formData = new FormData()
+        formData.append(`__proto__[${pollutedKey}]`, "yes")
+        await decoding(formData, {
+          ["__proto__"]: {
+            [pollutedKey]: "yes"
+          }
+        })
+        assert.isFalse(Object.hasOwn(Object.prototype, pollutedKey))
+      } finally {
+        Reflect.deleteProperty(Object.prototype, pollutedKey)
+      }
+    })
   })
 
   describe("decodeURLSearchParams / encodeURLSearchParams", () => {
@@ -370,6 +418,24 @@ describe("SchemaGetter", () => {
         tags: ["a", "b"]
       }
       await decoding(urlSearchParams, object)
+    })
+
+    it("does not traverse inherited constructor paths", async () => {
+      const pollutedKey = "__effectSchemaPolluted"
+      Reflect.deleteProperty(Object.prototype, pollutedKey)
+      try {
+        const urlSearchParams = new URLSearchParams(`constructor[prototype][${pollutedKey}]=yes`)
+        await decoding(urlSearchParams, {
+          constructor: {
+            prototype: {
+              [pollutedKey]: "yes"
+            }
+          }
+        })
+        assert.isFalse(Object.hasOwn(Object.prototype, pollutedKey))
+      } finally {
+        Reflect.deleteProperty(Object.prototype, pollutedKey)
+      }
     })
   })
 })

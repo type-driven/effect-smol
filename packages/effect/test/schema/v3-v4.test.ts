@@ -1,4 +1,4 @@
-import { Option, Predicate, Schema, SchemaGetter } from "effect"
+import { Effect, Option, Predicate, Schema, SchemaGetter } from "effect"
 import { TestSchema } from "effect/testing"
 import { describe, it } from "vitest"
 
@@ -9,18 +9,18 @@ describe("v3 -> v4 migration tests", () => {
       //   a: Schema.optionalWith(Schema.NumberFromString, { default: () => "default value" })
       // })
 
-      function f<S extends Schema.Top>(schema: S, defaultValue: () => S["Type"]) {
+      function f<S extends Schema.Constraint>(schema: S, defaultValue: S["Type"]) {
         return Schema.Struct({
           a: Schema.optional(schema).pipe(
             Schema.decodeTo(Schema.toType(schema), {
-              decode: SchemaGetter.withDefault(defaultValue),
+              decode: SchemaGetter.withDefault(Effect.succeed(defaultValue)),
               encode: SchemaGetter.required()
             })
           )
         })
       }
 
-      const schema = f(Schema.NumberFromString, () => -1)
+      const schema = f(Schema.NumberFromString, -1)
 
       const asserts = new TestSchema.Asserts(schema)
 
@@ -48,18 +48,18 @@ describe("v3 -> v4 migration tests", () => {
       //   a: Schema.optionalWith(Schema.NumberFromString, { default: () => "default value", exact: true })
       // })
 
-      function f<S extends Schema.Top>(schema: S, defaultValue: () => S["Type"]) {
+      function f<S extends Schema.Constraint>(schema: S, defaultValue: S["Type"]) {
         return Schema.Struct({
           a: Schema.optionalKey(schema).pipe(
             Schema.decodeTo(Schema.toType(schema), {
-              decode: SchemaGetter.withDefault(defaultValue),
+              decode: SchemaGetter.withDefault(Effect.succeed(defaultValue)),
               encode: SchemaGetter.required()
             })
           )
         })
       }
 
-      const schema = f(Schema.NumberFromString, () => -1)
+      const schema = f(Schema.NumberFromString, -1)
 
       const asserts = new TestSchema.Asserts(schema)
 
@@ -91,7 +91,7 @@ describe("v3 -> v4 migration tests", () => {
       //   a: Schema.optionalWith(Schema.String, { nullable: true })
       // })
 
-      function f<S extends Schema.Top>(schema: S) {
+      function f<S extends Schema.Constraint>(schema: S) {
         return Schema.Struct({
           a: Schema.optional(Schema.NullOr(schema)).pipe(
             Schema.decodeTo(Schema.optional(Schema.toType(schema)), {
@@ -128,7 +128,7 @@ describe("v3 -> v4 migration tests", () => {
       //   a: Schema.optionalWith(Schema.NumberFromString, { nullable: true, exact: true })
       // })
 
-      function f<S extends Schema.Top>(schema: S) {
+      function f<S extends Schema.Constraint>(schema: S) {
         return Schema.Struct({
           a: Schema.optionalKey(Schema.NullOr(schema)).pipe(
             Schema.decodeTo(Schema.optionalKey(Schema.toType(schema)), {
@@ -168,7 +168,7 @@ describe("v3 -> v4 migration tests", () => {
       //   a: Schema.optionalWith(Schema.NumberFromString, { nullable: true, default: () => "default value" })
       // })
 
-      function f<S extends Schema.Top>(schema: S, defaultValue: () => S["Type"]) {
+      function f<S extends Schema.Constraint>(schema: S, defaultValue: () => S["Type"]) {
         return Schema.Struct({
           a: Schema.optional(Schema.NullOr(schema)).pipe(
             Schema.decodeTo(Schema.UndefinedOr(Schema.toType(schema)), {
@@ -206,7 +206,7 @@ describe("v3 -> v4 migration tests", () => {
       //   a: Schema.optionalWith(Schema.NumberFromString, { nullable: true, default: () => "default value", exact: true })
       // })
 
-      function f<S extends Schema.Top>(schema: S, defaultValue: () => S["Type"]) {
+      function f<S extends Schema.Constraint>(schema: S, defaultValue: () => S["Type"]) {
         return Schema.Struct({
           a: Schema.optionalKey(Schema.NullOr(schema)).pipe(
             Schema.decodeTo(Schema.toType(schema), {

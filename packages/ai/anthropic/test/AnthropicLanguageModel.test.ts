@@ -111,6 +111,230 @@ describe("AnthropicLanguageModel", () => {
         assert.strictEqual(toolCall.name, "GlobTool")
         assert.deepStrictEqual(toolCall.params, toolParams)
       }))
+
+    // `Model` is an open enum in Anthropic's spec (`anyOf: [{ type: string }, ...consts]`), and it is
+    // $ref'd by response schemas. Responses must therefore decode for model ids that are newer than the
+    // generated literals, and the id must survive decoding unchanged.
+    it.effect("decodes responses for a model id that is not a known literal", () =>
+      Effect.gen(function*() {
+        const layer = AnthropicClient.layer({ apiKey: Redacted.make("sk-test-key") }).pipe(
+          Layer.provide(Layer.succeed(
+            HttpClient.HttpClient,
+            makeHttpClient((request) =>
+              Effect.succeed(sseResponse(request, [
+                {
+                  type: "message_start",
+                  message: {
+                    id: "msg_test_1",
+                    type: "message",
+                    role: "assistant",
+                    model: "claude-not-a-known-model-id",
+                    content: [],
+                    stop_reason: null,
+                    stop_sequence: null,
+                    usage: {
+                      cache_creation: null,
+                      cache_creation_input_tokens: null,
+                      cache_read_input_tokens: null,
+                      inference_geo: null,
+                      input_tokens: 10,
+                      output_tokens: 0,
+                      service_tier: null
+                    }
+                  }
+                },
+                {
+                  type: "content_block_start",
+                  index: 0,
+                  content_block: { type: "text", text: "" }
+                },
+                {
+                  type: "content_block_delta",
+                  index: 0,
+                  delta: { type: "text_delta", text: "Hello" }
+                },
+                {
+                  type: "content_block_stop",
+                  index: 0
+                },
+                {
+                  type: "message_delta",
+                  delta: {
+                    stop_reason: "end_turn",
+                    stop_sequence: null
+                  },
+                  usage: {
+                    cache_creation_input_tokens: null,
+                    cache_read_input_tokens: null,
+                    input_tokens: null,
+                    output_tokens: 5
+                  }
+                },
+                {
+                  type: "message_stop"
+                }
+              ]))
+            )
+          ))
+        )
+
+        const partsChunk = yield* LanguageModel.streamText({
+          prompt: "say hello"
+        }).pipe(
+          Stream.runCollect,
+          Effect.provide(AnthropicLanguageModel.model("claude-not-a-known-model-id")),
+          Effect.provide(layer)
+        )
+
+        const parts = globalThis.Array.from(partsChunk)
+        const metadata = parts.find((part) => part.type === "response-metadata")
+        assert.isDefined(metadata)
+        if (metadata?.type !== "response-metadata") {
+          return
+        }
+
+        assert.strictEqual(metadata.modelId, "claude-not-a-known-model-id")
+
+        const text = parts.find((part) => part.type === "text-delta")
+        assert.isDefined(text)
+        if (text?.type !== "text-delta") {
+          return
+        }
+
+        assert.strictEqual(text.delta, "Hello")
+      }))
+  })
+
+  describe("generateText", () => {
+    it.effect("encodes dynamic tools", () =>
+      Effect.gen(function*() {
+        let capturedRequest: HttpClientRequest.HttpClientRequest | undefined = undefined
+        const layer = AnthropicClient.layer({ apiKey: Redacted.make("sk-test-key") }).pipe(
+          Layer.provide(Layer.succeed(
+            HttpClient.HttpClient,
+            makeHttpClient((request) => {
+              capturedRequest = request
+              return Effect.succeed(jsonResponse(request, {
+                id: "msg_test_1",
+                type: "message",
+                role: "assistant",
+                model: "claude-sonnet-4-20250514",
+                content: [{ type: "text", text: "Done" }],
+                stop_reason: "end_turn",
+                stop_sequence: null,
+                usage: {
+                  cache_creation: null,
+                  cache_creation_input_tokens: null,
+                  cache_read_input_tokens: null,
+                  inference_geo: null,
+                  input_tokens: 10,
+                  output_tokens: 5,
+                  service_tier: null
+                }
+              }))
+            })
+          ))
+        )
+
+        const inputSchema = {
+          type: "object",
+          properties: {
+            query: { type: "string" },
+            limit: { type: "number" }
+          },
+          required: ["query"],
+          additionalProperties: false
+        } as const
+
+        const DynamicTool = Tool.dynamic("DynamicTool", {
+          description: "A dynamic tool",
+          parameters: inputSchema
+        })
+
+        yield* LanguageModel.generateText({
+          prompt: "Use the dynamic tool",
+          toolkit: Toolkit.make(DynamicTool),
+          disableToolCallResolution: true
+        }).pipe(
+          Effect.provide(AnthropicLanguageModel.model("claude-sonnet-4-20250514")),
+          Effect.provide(layer)
+        )
+
+        assert.isDefined(capturedRequest)
+        if (capturedRequest === undefined) {
+          return
+        }
+
+        const body = yield* getRequestBody(capturedRequest)
+        const dynamicTool = body.tools.find((tool: any) => tool.name === "DynamicTool")
+
+        assert.isDefined(dynamicTool)
+        if (dynamicTool === undefined) {
+          return
+        }
+
+        assert.strictEqual(dynamicTool.description, "A dynamic tool")
+        assert.deepStrictEqual(dynamicTool.input_schema, inputSchema)
+      }))
+  })
+
+  describe("generateObject", () => {
+    // A model that supports native structured output requests it via `output_config.format` (json_schema)
+    // rather than falling back to a forced JSON tool.
+    const assertNativeStructuredOutput = (model: string) =>
+      Effect.gen(function*() {
+        let capturedRequest: HttpClientRequest.HttpClientRequest | undefined = undefined
+        const layer = AnthropicClient.layer({ apiKey: Redacted.make("sk-test-key") }).pipe(
+          Layer.provide(Layer.succeed(
+            HttpClient.HttpClient,
+            makeHttpClient((request) => {
+              capturedRequest = request
+              return Effect.succeed(jsonResponse(request, {
+                id: "msg_test_1",
+                type: "message",
+                role: "assistant",
+                model,
+                content: [{ type: "text", text: JSON.stringify({ name: "John", age: 30 }) }],
+                stop_reason: "end_turn",
+                stop_sequence: null,
+                usage: {
+                  cache_creation: null,
+                  cache_creation_input_tokens: null,
+                  cache_read_input_tokens: null,
+                  inference_geo: null,
+                  input_tokens: 10,
+                  output_tokens: 5,
+                  service_tier: null
+                }
+              }))
+            })
+          ))
+        )
+
+        // Assert the request shape; the response outcome is irrelevant here.
+        yield* LanguageModel.generateObject({
+          prompt: "Give me a person",
+          schema: Schema.Struct({ name: Schema.String, age: Schema.Number })
+        }).pipe(
+          Effect.provide(AnthropicLanguageModel.model(model)),
+          Effect.provide(layer),
+          Effect.ignore
+        )
+
+        assert.isDefined(capturedRequest)
+        if (capturedRequest === undefined) {
+          return
+        }
+
+        const body = yield* getRequestBody(capturedRequest)
+        assert.strictEqual(body.output_config?.format?.type, "json_schema")
+      })
+
+    it.effect("uses native json_schema output for claude-opus-4-6", () =>
+      assertNativeStructuredOutput("claude-opus-4-6"))
+
+    it.effect("uses native json_schema output for claude-sonnet-4-6", () =>
+      assertNativeStructuredOutput("claude-sonnet-4-6"))
   })
 })
 
@@ -140,6 +364,29 @@ const sseResponse = (
       }
     })
   )
+
+const jsonResponse = (
+  request: HttpClientRequest.HttpClientRequest,
+  body: unknown
+): HttpClientResponse.HttpClientResponse =>
+  HttpClientResponse.fromWeb(
+    request,
+    new Response(JSON.stringify(body), {
+      status: 200,
+      headers: {
+        "content-type": "application/json"
+      }
+    })
+  )
+
+const getRequestBody = (request: HttpClientRequest.HttpClientRequest) =>
+  Effect.gen(function*() {
+    const body = request.body
+    if (body._tag !== "Uint8Array") {
+      return yield* Effect.die(new Error("Expected Uint8Array body"))
+    }
+    return JSON.parse(new TextDecoder().decode(body.body))
+  })
 
 const toSseBody = (events: ReadonlyArray<unknown>): string =>
   events.map((event) => `event: message_stream\ndata: ${JSON.stringify(event)}\n\n`).join("")

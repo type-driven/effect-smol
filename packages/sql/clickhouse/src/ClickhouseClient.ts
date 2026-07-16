@@ -1,21 +1,39 @@
 /**
- * @since 1.0.0
+ * ClickHouse driver for Effect SQL, backed by `@clickhouse/client`.
+ *
+ * This module provides both the ClickHouse-specific {@link ClickhouseClient}
+ * service and the generic {@link Client.SqlClient} service. `make` creates a
+ * scoped client, checks the connection with `SELECT 1`, maps ClickHouse errors
+ * to `SqlError`, and aborts in-flight queries when interrupted. The
+ * ClickHouse-specific service adds typed parameters, command execution, insert
+ * queries, query id and settings helpers, a statement compiler, and direct or
+ * config-backed layers.
+ *
+ * @since 4.0.0
  */
 import * as Clickhouse from "@clickhouse/client"
 import * as NodeStream from "@effect/platform-node/NodeStream"
 import * as Config from "effect/Config"
+import * as Context from "effect/Context"
 import * as Duration from "effect/Duration"
 import * as Effect from "effect/Effect"
 import * as Fiber from "effect/Fiber"
 import { dual } from "effect/Function"
 import * as Layer from "effect/Layer"
 import type * as Scope from "effect/Scope"
-import * as ServiceMap from "effect/ServiceMap"
 import * as Stream from "effect/Stream"
 import * as Reactivity from "effect/unstable/reactivity/Reactivity"
 import * as Client from "effect/unstable/sql/SqlClient"
 import type { Connection } from "effect/unstable/sql/SqlConnection"
-import { SqlError } from "effect/unstable/sql/SqlError"
+import {
+  AuthenticationError,
+  AuthorizationError,
+  ConnectionError,
+  SqlError,
+  SqlSyntaxError,
+  StatementTimeoutError,
+  UnknownError
+} from "effect/unstable/sql/SqlError"
 import * as Statement from "effect/unstable/sql/Statement"
 import * as Crypto from "node:crypto"
 import type { Readable } from "node:stream"
@@ -23,21 +41,71 @@ import type { Readable } from "node:stream"
 const ATTR_DB_SYSTEM_NAME = "db.system.name"
 const ATTR_DB_NAMESPACE = "db.namespace"
 
+const clickhouseCodeFromCause = (cause: unknown): number | undefined => {
+  if (typeof cause !== "object" || cause === null || !("code" in cause)) {
+    return undefined
+  }
+  const code = cause.code
+  if (typeof code === "number") {
+    return code
+  }
+  if (typeof code === "string") {
+    const parsed = Number(code)
+    return Number.isNaN(parsed) ? undefined : parsed
+  }
+  return undefined
+}
+
+const clickhouseSyntaxErrorCodes = new Set([36, 60, 62, 242])
+
+const classifyError = (
+  cause: unknown,
+  message: string,
+  operation: string,
+  fallback: "connection" | "unknown" = "unknown"
+) => {
+  const props = { cause, message, operation }
+  const code = clickhouseCodeFromCause(cause)
+  if (code !== undefined) {
+    if (code === 516) {
+      return new AuthenticationError(props)
+    }
+    if (code === 497) {
+      return new AuthorizationError(props)
+    }
+    if (clickhouseSyntaxErrorCodes.has(code)) {
+      return new SqlSyntaxError(props)
+    }
+    if (code === 159 || code === 469) {
+      return new StatementTimeoutError(props)
+    }
+  }
+  return fallback === "connection" ? new ConnectionError(props) : new UnknownError(props)
+}
+
 /**
- * @category type ids
- * @since 1.0.0
+ * Unique runtime identifier used to tag `ClickhouseClient` values.
+ *
+ * @category type IDs
+ * @since 4.0.0
  */
 export const TypeId: TypeId = "~@effect/sql-clickhouse/ClickhouseClient"
 
 /**
- * @category type ids
- * @since 1.0.0
+ * Type-level literal for the `ClickhouseClient` runtime identifier.
+ *
+ * @category type IDs
+ * @since 4.0.0
  */
 export type TypeId = "~@effect/sql-clickhouse/ClickhouseClient"
 
 /**
+ * ClickHouse-specific `SqlClient` extension with access to its configuration,
+ * typed parameter fragments, command-mode execution, insert queries, and
+ * per-effect query ID and ClickHouse settings.
+ *
  * @category models
- * @since 1.0.0
+ * @since 4.0.0
  */
 export interface ClickhouseClient extends Client.SqlClient {
   readonly [TypeId]: TypeId
@@ -65,14 +133,24 @@ export interface ClickhouseClient extends Client.SqlClient {
 }
 
 /**
- * @category tags
- * @since 1.0.0
+ * Service tag for the active ClickHouse SQL client.
+ *
+ * **When to use**
+ *
+ * Use to access or provide a ClickHouse SQL client through the Effect context.
+ *
+ * @category services
+ * @since 4.0.0
  */
-export const ClickhouseClient = ServiceMap.Service<ClickhouseClient>("@effect/sql-clickhouse/ClickhouseClient")
+export const ClickhouseClient = Context.Service<ClickhouseClient>("@effect/sql-clickhouse/ClickhouseClient")
 
 /**
+ * Configuration for creating a ClickHouse client, combining
+ * `@clickhouse/client` options with optional span attributes and query/result
+ * name transforms.
+ *
  * @category constructors
- * @since 1.0.0
+ * @since 4.0.0
  */
 export interface ClickhouseClientConfig extends Clickhouse.ClickHouseClientConfigOptions {
   readonly spanAttributes?: Record<string, unknown> | undefined
@@ -81,8 +159,12 @@ export interface ClickhouseClientConfig extends Clickhouse.ClickHouseClientConfi
 }
 
 /**
+ * Creates a scoped `ClickhouseClient`, verifies connectivity with `SELECT 1`,
+ * closes the underlying client when the scope ends, maps ClickHouse failures
+ * to `SqlError`, and aborts plus kills in-flight queries when interrupted.
+ *
  * @category constructors
- * @since 1.0.0
+ * @since 4.0.0
  */
 export const make = (
   options: ClickhouseClientConfig
@@ -98,17 +180,21 @@ export const make = (
     yield* Effect.acquireRelease(
       Effect.tryPromise({
         try: () => client.exec({ query: "SELECT 1" }),
-        catch: (cause) => new SqlError({ cause, message: "ClickhouseClient: Failed to connect" })
+        catch: (cause) =>
+          new SqlError({ reason: classifyError(cause, "ClickhouseClient: Failed to connect", "connect", "connection") })
       }),
       () => Effect.promise(() => client.close())
     ).pipe(
       Effect.timeoutOrElse({
         duration: Duration.seconds(5),
-        onTimeout: () =>
+        orElse: () =>
           Effect.fail(
             new SqlError({
-              message: "ClickhouseClient: Connection timeout",
-              cause: new Error("connection timeout")
+              reason: new ConnectionError({
+                message: "ClickhouseClient: Connection timeout",
+                cause: new Error("connection timeout"),
+                operation: "connect"
+              })
             })
           )
       })
@@ -140,7 +226,12 @@ export const make = (
                 clickhouse_settings: settings
               }).then(
                 (result) => resume(Effect.succeed(result)),
-                (cause) => resume(Effect.fail(new SqlError({ cause, message: "Failed to execute statement" })))
+                (cause) =>
+                  resume(
+                    Effect.fail(
+                      new SqlError({ reason: classifyError(cause, "Failed to execute statement", "execute") })
+                    )
+                  )
               )
             } else {
               this.conn.query({
@@ -152,7 +243,12 @@ export const make = (
                 format
               }).then(
                 (result) => resume(Effect.succeed(result)),
-                (cause) => resume(Effect.fail(new SqlError({ cause, message: "Failed to execute statement" })))
+                (cause) =>
+                  resume(
+                    Effect.fail(
+                      new SqlError({ reason: classifyError(cause, "Failed to execute statement", "execute") })
+                    )
+                  )
               )
             }
             return Effect.suspend(() => {
@@ -194,6 +290,9 @@ export const make = (
       executeValues(sql: string, params: ReadonlyArray<unknown>) {
         return this.run(sql, params, "JSONCompact")
       }
+      executeValuesUnprepared(sql: string, params: ReadonlyArray<unknown>) {
+        return this.executeValues(sql, params)
+      }
       executeUnprepared(sql: string, params: ReadonlyArray<unknown>, transformRows?: any) {
         return this.execute(sql, params, transformRows)
       }
@@ -209,7 +308,7 @@ export const make = (
             }
             return NodeStream.fromReadable<ReadonlyArray<Clickhouse.Row<any, "JSONEachRow">>, SqlError>({
               evaluate: () => result.stream() as any,
-              onError: (cause) => new SqlError({ cause, message: "Failed to execute stream" })
+              onError: (cause) => new SqlError({ reason: classifyError(cause, "Failed to execute stream", "stream") })
             })
           }),
           Stream.unwrap,
@@ -223,7 +322,7 @@ export const make = (
             }
             return Effect.tryPromise({
               try: () => Promise.all(promises).then((rows) => transformRows ? transformRows(rows) : rows),
-              catch: (cause) => new SqlError({ cause, message: "Failed to parse row" })
+              catch: (cause) => new SqlError({ reason: classifyError(cause, "Failed to parse row", "parseRow") })
             })
           }),
           Stream.flattenIterable
@@ -272,7 +371,8 @@ export const make = (
               clickhouse_settings: settings
             }).then(
               (result) => resume(Effect.succeed(result)),
-              (cause) => resume(Effect.fail(new SqlError({ cause, message: "Failed to insert data" })))
+              (cause) =>
+                resume(Effect.fail(new SqlError({ reason: classifyError(cause, "Failed to insert data", "insert") })))
             )
             return Effect.suspend(() => {
               controller.abort()
@@ -280,25 +380,29 @@ export const make = (
             })
           })
         },
-        withQueryId: dual(2, <A, E, R>(effect: Effect.Effect<A, E, R>, queryId: string) =>
-          Effect.provideService(effect, QueryId, queryId)),
+        withQueryId: dual(
+          2,
+          <A, E, R>(effect: Effect.Effect<A, E, R>, queryId: string) => Effect.provideService(effect, QueryId, queryId)
+        ),
         withClickhouseSettings: dual(
           2,
           <A, E, R>(
             effect: Effect.Effect<A, E, R>,
             settings: NonNullable<Clickhouse.BaseQueryParams["clickhouse_settings"]>
-          ) =>
-            Effect.provideService(effect, ClickhouseSettings, settings)
+          ) => Effect.provideService(effect, ClickhouseSettings, settings)
         )
       }
     )
   })
 
 /**
- * @category References
- * @since 1.0.0
+ * Fiber reference read by the low-level ClickHouse connection to choose query
+ * or command execution for statements; defaults to `query`.
+ *
+ * @category references
+ * @since 4.0.0
  */
-export const ClientMethod = ServiceMap.Reference<"query" | "command" | "insert">(
+export const ClientMethod = Context.Reference<"query" | "command" | "insert">(
   "@effect/sql-clickhouse/ClickhouseClient/ClientMethod",
   {
     defaultValue: () => "query"
@@ -306,55 +410,67 @@ export const ClientMethod = ServiceMap.Reference<"query" | "command" | "insert">
 )
 
 /**
- * @category References
- * @since 1.0.0
+ * Fiber reference for the ClickHouse `query_id` applied to queries and
+ * inserts; a random UUID is generated when no query ID is set.
+ *
+ * @category references
+ * @since 4.0.0
  */
-export const QueryId = ServiceMap.Reference<string | undefined>(
+export const QueryId = Context.Reference<string | undefined>(
   "@effect/sql-clickhouse/ClickhouseClient/QueryId",
   { defaultValue: () => undefined }
 )
 
 /**
- * @category References
- * @since 1.0.0
+ * Fiber reference containing ClickHouse settings to attach to queries,
+ * commands, and inserts.
+ *
+ * @category references
+ * @since 4.0.0
  */
-export const ClickhouseSettings: ServiceMap.Reference<
+export const ClickhouseSettings: Context.Reference<
   NonNullable<Clickhouse.BaseQueryParams["clickhouse_settings"]>
-> = ServiceMap.Reference("@effect/sql-clickhouse/ClickhouseClient/ClickhouseSettings", {
+> = Context.Reference("@effect/sql-clickhouse/ClickhouseClient/ClickhouseSettings", {
   defaultValue: () => ({})
 })
 
 /**
+ * Provides both `ClickhouseClient` and generic `SqlClient` services from a
+ * `Config`-backed ClickHouse client configuration.
+ *
  * @category layers
- * @since 1.0.0
+ * @since 4.0.0
  */
 export const layerConfig: (
   config: Config.Wrap<ClickhouseClientConfig>
 ) => Layer.Layer<ClickhouseClient | Client.SqlClient, Config.ConfigError | SqlError> = (
   config: Config.Wrap<ClickhouseClientConfig>
 ): Layer.Layer<ClickhouseClient | Client.SqlClient, Config.ConfigError | SqlError> =>
-  Layer.effectServices(
-    Config.unwrap(config).asEffect().pipe(
+  Layer.effectContext(
+    Config.unwrap(config).pipe(
       Effect.flatMap(make),
       Effect.map((client) =>
-        ServiceMap.make(ClickhouseClient, client).pipe(
-          ServiceMap.add(Client.SqlClient, client)
+        Context.make(ClickhouseClient, client).pipe(
+          Context.add(Client.SqlClient, client)
         )
       )
     )
   ).pipe(Layer.provide(Reactivity.layer))
 
 /**
+ * Provides both `ClickhouseClient` and generic `SqlClient` services from a
+ * ClickHouse client configuration.
+ *
  * @category layers
- * @since 1.0.0
+ * @since 4.0.0
  */
 export const layer = (
   config: ClickhouseClientConfig
 ): Layer.Layer<ClickhouseClient | Client.SqlClient, Config.ConfigError | SqlError> =>
-  Layer.effectServices(
+  Layer.effectContext(
     Effect.map(make(config), (client) =>
-      ServiceMap.make(ClickhouseClient, client).pipe(
-        ServiceMap.add(Client.SqlClient, client)
+      Context.make(ClickhouseClient, client).pipe(
+        Context.add(Client.SqlClient, client)
       ))
   ).pipe(Layer.provide(Reactivity.layer))
 
@@ -384,8 +500,12 @@ const typeFromUnknown = (value: unknown): string => {
 }
 
 /**
+ * Creates the SQL statement compiler for ClickHouse, emitting typed
+ * `{pN: Type}` placeholders and escaping identifiers with an optional query
+ * name transform.
+ *
  * @category compiler
- * @since 1.0.0
+ * @since 4.0.0
  */
 export const makeCompiler = (transform?: (_: string) => string) =>
   Statement.makeCompiler<ClickhouseCustom>({
@@ -411,14 +531,17 @@ export const makeCompiler = (transform?: (_: string) => string) =>
 const escape = Statement.defaultEscape("\"")
 
 /**
+ * Custom SQL fragment type used for ClickHouse typed parameters created by
+ * `ClickhouseClient.param`.
+ *
  * @category custom types
- * @since 1.0.0
+ * @since 4.0.0
  */
 export type ClickhouseCustom = ClickhouseParam
 
 /**
  * @category custom types
- * @since 1.0.0
+ * @since 4.0.0
  */
 interface ClickhouseParam extends Statement.Custom<"ClickhouseParam", string, unknown> {}
 

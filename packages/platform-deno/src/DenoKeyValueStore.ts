@@ -18,7 +18,7 @@ import { makeKvStore } from "./internal/kv.ts"
  * @category layer
  */
 export const layerLocalStorage: Layer.Layer<KeyValueStore.KeyValueStore> = KeyValueStore.layerStorage(() =>
-  localStorage
+  globalThis.localStorage
 )
 
 /**
@@ -30,7 +30,7 @@ export const layerLocalStorage: Layer.Layer<KeyValueStore.KeyValueStore> = KeyVa
  * @category layer
  */
 export const layerSessionStorage: Layer.Layer<KeyValueStore.KeyValueStore> = KeyValueStore.layerStorage(() =>
-  sessionStorage
+  globalThis.sessionStorage
 )
 
 /**

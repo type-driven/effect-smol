@@ -208,7 +208,7 @@ const createMockDeno = (root: string): Partial<typeof globalThis.Deno> => {
   }
 }
 
-const toFileInfo = (stats: Awaited<ReturnType<typeof Fs.stat>>) => ({
+const toFileInfo = (stats: NonNullable<Awaited<ReturnType<typeof Fs.stat>>>) => ({
   isFile: stats.isFile(),
   isDirectory: stats.isDirectory(),
   isSymlink: stats.isSymbolicLink(),

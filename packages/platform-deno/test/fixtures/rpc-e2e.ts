@@ -1,5 +1,5 @@
 import { assert, describe, it } from "@effect/vitest"
-import { Cause, Effect, Fiber, Option, ServiceMap, Stream } from "effect"
+import { Cause, Context, Effect, Fiber, Option, Stream } from "effect"
 import * as Layer from "effect/Layer"
 import * as RpcClient from "effect/unstable/rpc/RpcClient"
 import type { RpcClientError } from "effect/unstable/rpc/RpcClientError"
@@ -8,7 +8,7 @@ import * as RpcServer from "effect/unstable/rpc/RpcServer"
 import * as RpcTest from "effect/unstable/rpc/RpcTest"
 import { AuthClient, AuthLive, TimingLive, User, UserRpcs, UsersLive } from "./rpc-schemas.ts"
 
-export class UsersClient extends ServiceMap.Service<
+export class UsersClient extends Context.Service<
   UsersClient,
   RpcClient.RpcClient<RpcGroup.Rpcs<typeof UserRpcs>, RpcClientError>
 >()("UsersClient") {

@@ -207,6 +207,21 @@ const spawnStandard = (
       stderr = Stream.transduce(stderr, stderrConfig.stream)
     }
 
+    let isReferenced = true
+    const reref = Effect.sync(() => {
+      if (!isReferenced) {
+        process.ref()
+        isReferenced = true
+      }
+    })
+    const unref = Effect.sync(() => {
+      if (isReferenced) {
+        process.unref()
+        isReferenced = false
+      }
+      return reref
+    })
+
     return makeHandle({
       pid: ProcessId(process.pid),
       exitCode: Deferred.await(exitDeferred),
@@ -221,7 +236,8 @@ const spawnStandard = (
       stderr,
       all: Stream.merge(stdout, stderr),
       getInputFd: () => Sink.drain,
-      getOutputFd: () => Stream.empty
+      getOutputFd: () => Stream.empty,
+      unref
     })
   })
 
@@ -246,6 +262,14 @@ const spawnPiped = (
 
     yield* Stream.run(source, target).pipe(Effect.forkScoped)
 
+    const unref = Effect.gen(function*() {
+      const rerefs: Array<Effect.Effect<void, PlatformError.PlatformError>> = []
+      for (const handle of [left, right]) {
+        rerefs.push(yield* handle.unref)
+      }
+      return Effect.forEach([...rerefs].reverse(), (reref) => reref, { discard: true })
+    })
+
     return makeHandle({
       pid: right.pid,
       exitCode: right.exitCode,
@@ -256,7 +280,8 @@ const spawnPiped = (
       stderr: Stream.merge(left.stderr, right.stderr),
       all: Stream.merge(left.all, right.all),
       getInputFd: left.getInputFd,
-      getOutputFd: right.getOutputFd
+      getOutputFd: right.getOutputFd,
+      unref
     })
   })
 

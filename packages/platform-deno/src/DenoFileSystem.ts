@@ -2,6 +2,7 @@
  * @since 1.0.0
  */
 import { copy as stdCopy } from "@std/fs/copy"
+import { expandGlob } from "@std/fs/expand-glob"
 import * as path from "@std/path"
 import * as Effect from "effect/Effect"
 import * as FileSystem from "effect/FileSystem"
@@ -98,7 +99,7 @@ const makeFile = (
   flag: FileSystem.OpenFlag = "r"
 ): FileSystem.File => {
   const append = flag.startsWith("a")
-  let position = 0n
+  let position = BigInt(0)
 
   const readAtPosition = (buffer: Uint8Array, method: string) => {
     const currentPosition = position
@@ -383,6 +384,28 @@ const readDirectory = (
     catch: (cause) => toPlatformError("readDirectory", cause)
   })
 
+const glob = (
+  pattern: string,
+  options?: {
+    readonly root?: string | undefined
+    readonly exclude?: ReadonlyArray<string> | undefined
+  }
+): Effect.Effect<Array<string>, PlatformError> =>
+  Effect.tryPromise({
+    try: async () => {
+      const exclude = options?.exclude ? [...options.exclude] : []
+      const iter = options?.root !== undefined
+        ? expandGlob(pattern, { root: options.root, exclude })
+        : expandGlob(pattern, { exclude })
+      const entries: Array<string> = []
+      for await (const entry of iter) {
+        entries.push(entry.path)
+      }
+      return entries
+    },
+    catch: (cause) => toPlatformError("glob", cause)
+  })
+
 const readFile = (filePath: string): Effect.Effect<Uint8Array, PlatformError> =>
   tryP("readFile", () => Deno.readFile(filePath))
 
@@ -495,6 +518,7 @@ export const layer: Layer.Layer<FileSystem.FileSystem> = Layer.succeed(FileSyste
     copyFile,
     chmod,
     chown,
+    glob,
     link,
     makeDirectory,
     makeTempDirectory,

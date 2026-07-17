@@ -123,6 +123,14 @@ export const make: (
     }
   })
 
+  const rows = Effect.sync(() => {
+    try {
+      return Deno.consoleSize().rows
+    } catch {
+      return 0
+    }
+  })
+
   const readInput: Effect.Effect<
     Queue.Dequeue<Terminal.UserInput, Cause.Done>,
     never,
@@ -212,6 +220,7 @@ export const make: (
 
   return Terminal.make({
     columns,
+    rows,
     readInput,
     readLine,
     display

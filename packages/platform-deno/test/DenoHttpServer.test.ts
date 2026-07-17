@@ -4,12 +4,12 @@ import * as Effect from "effect/Effect"
 import * as Exit from "effect/Exit"
 import * as Option from "effect/Option"
 import * as Scope from "effect/Scope"
-import * as ServiceMap from "effect/ServiceMap"
+import * as Context from "effect/Context"
 import * as Stream from "effect/Stream"
 import { HttpServerRequest, HttpServerResponse } from "effect/unstable/http"
 import * as HttpServerResponseModule from "effect/unstable/http/HttpServerResponse"
 
-class Prefix extends ServiceMap.Service<Prefix, string>()("Prefix") {}
+class Prefix extends Context.Service<Prefix, string>()("Prefix") {}
 
 const withStubbedDenoServe = Effect.fnUntraced(function*<
   A,
@@ -56,7 +56,7 @@ describe("DenoHttpServer", () => {
       const scope = yield* Scope.make()
       yield* Effect.addFinalizer(() => Scope.close(scope, Exit.void))
       const handler = yield* DenoHttpServer.makeHandler(
-        Effect.map(Prefix.asEffect(), (prefix) =>
+        Effect.map(Effect.service(Prefix), (prefix) =>
           HttpServerResponse.stream(Stream.make(new TextEncoder().encode(prefix)))),
         { scope }
       ).pipe(Effect.provideService(Prefix, "ok"))
@@ -87,7 +87,7 @@ describe("DenoHttpServer", () => {
       const scope = yield* Scope.make()
       yield* Effect.addFinalizer(() => Scope.close(scope, Exit.void))
       const handler = yield* DenoHttpServer.makeHandler(
-        Effect.map(HttpServerRequest.HttpServerRequest.asEffect(), (request) =>
+        Effect.map(Effect.service(HttpServerRequest.HttpServerRequest), (request) =>
           HttpServerResponse.text(Option.getOrElse(request.remoteAddress, () => "missing"))),
         { scope }
       )

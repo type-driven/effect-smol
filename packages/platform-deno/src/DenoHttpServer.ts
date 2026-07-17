@@ -8,7 +8,7 @@ import * as Layer from "effect/Layer"
 import * as Option from "effect/Option"
 import * as Scheduler from "effect/Scheduler"
 import * as Scope from "effect/Scope"
-import * as ServiceMap from "effect/ServiceMap"
+import * as Context from "effect/Context"
 import * as Cookies from "effect/unstable/http/Cookies"
 import * as HttpEffect from "effect/unstable/http/HttpEffect"
 import type * as Middleware from "effect/unstable/http/HttpMiddleware"
@@ -121,7 +121,7 @@ export const makeHandler = <
       return Effect.withFiber((fiber) => {
         const transferred = HttpEffect.scopeTransferToStream(response)
         resolve(Response.toWeb(transferred, {
-          services: fiber.services as any
+          context: fiber.context as any
         }))
         return Effect.void
       })
@@ -129,9 +129,9 @@ export const makeHandler = <
     return Effect.void
   }, options.middleware as any)
   return Effect.withFiber((parent) => {
-    const services = parent.services.mapUnsafe.has(Scheduler.Scheduler.key)
-      ? parent.services
-      : ServiceMap.add(parent.services, Scheduler.Scheduler, parent.currentScheduler)
+    const services = parent.context.mapUnsafe.has(Scheduler.Scheduler.key)
+      ? parent.context
+      : Context.add(parent.context, Scheduler.Scheduler, parent.currentScheduler)
     return Effect.succeed(function handler(
       webRequest: globalThis.Request,
       info: Deno.ServeHandlerInfo
@@ -151,7 +151,7 @@ export const makeHandler = <
       }
       const map = new Map(services.mapUnsafe)
       map.set(HttpServerRequest.key, serverRequest)
-      const fiber = Fiber.runIn(Effect.runForkWith(ServiceMap.makeUnsafe<any>(map))(handled), options.scope)
+      const fiber = Fiber.runIn(Effect.runForkWith(Context.makeUnsafe<any>(map))(handled), options.scope)
       if (response !== undefined && fiber.pollUnsafe() !== undefined) {
         return response
       }
